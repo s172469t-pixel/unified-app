@@ -1,0 +1,3365 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="StudyAssist">
+  <meta name="theme-color" content="#007AFF">
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <title>StudyAssist</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --header-h: 56px;
+      --nav-w: 136px;
+      --accent: #007AFF;
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --text: #1C1C1E;
+      --sub: #8E8E93;
+      --danger: #FF3B30;
+      --green: #34C759;
+      --orange: #FF9500;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100dvh; overflow-x: hidden;
+      overscroll-behavior-y: contain;
+      user-select: none; -webkit-user-select: none;
+    }
+
+    /* ── user-select: text for inputs and readable content ── */
+    .form-input, .form-textarea, .form-select,
+    input[type="text"], input[type="search"], input[type="datetime-local"],
+    textarea, select, .detail-section-body {
+      user-select: text; -webkit-user-select: text;
+    }
+
+    /* ── Screen switching ── */
+    .app-screen { display: none; min-height: 100dvh; }
+    .app-screen.active { display: block; }
+
+    /* ── Nav bar ── */
+    #nav-bar {
+      position: fixed; top: 0; right: 0; z-index: 2000;
+      height: calc(var(--header-h) + var(--safe-top));
+      padding-top: var(--safe-top);
+      display: flex; align-items: center; padding-right: 4px;
+    }
+    .nav-btn {
+      position: relative; width: 44px; height: 44px;
+      border: none; background: none; border-radius: 10px; font-size: 20px;
+      cursor: pointer; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; transition: background 0.15s; flex-shrink: 0;
+    }
+    .nav-btn.active { background: rgba(0,122,255,0.13); }
+    .nav-progress {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+      background: rgba(0,122,255,0.22); pointer-events: none;
+    }
+    .nav-icon { position: relative; z-index: 1; line-height: 1; }
+
+    /* ── Shared header ── */
+    .app-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: calc(var(--header-h) + var(--safe-top));
+      padding-top: var(--safe-top);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      display: flex; align-items: center; padding-inline: 12px; z-index: 100;
+    }
+    .header-hamburger {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0; color: var(--text);
+    }
+    .header-title {
+      position: absolute; left: 56px; right: var(--nav-w);
+      text-align: center; font-size: 17px; font-weight: 600; pointer-events: none;
+    }
+
+    /* ── Shared: section label, empty state ── */
+    .section-label {
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 4px;
+    }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--sub); }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── Shared: drawer ── */
+    .drawer-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+    .drawer-panel {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+      background: var(--card); z-index: 201;
+      transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column; padding-top: var(--safe-top);
+    }
+    .drawer-panel.open { transform: translateX(0); }
+    .drawer-header {
+      height: var(--header-h); display: flex; align-items: center;
+      padding-inline: 20px; font-size: 20px; font-weight: 700;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .drawer-menu { list-style: none; padding: 12px 0; }
+    .drawer-menu li a {
+      display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+      font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none;
+      -webkit-tap-highlight-color: transparent; cursor: pointer;
+    }
+    .drawer-menu li a:active { background: var(--bg); }
+    .drawer-menu li a .icon { font-size: 20px; width: 26px; text-align: center; flex-shrink: 0; }
+
+    /* ── Shared: sub-screen ── */
+    .sub-screen {
+      position: fixed; inset: 0; background: var(--bg); z-index: 220;
+      transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column; padding-top: var(--safe-top); overflow: hidden;
+    }
+    .sub-screen.open { transform: translateX(0); }
+    .sub-header {
+      height: var(--header-h); flex-shrink: 0;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: space-between; padding-inline: 4px;
+    }
+    .sub-back-btn {
+      width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; font-size: 22px; color: var(--accent);
+      -webkit-tap-highlight-color: transparent; padding-bottom: 2px;
+    }
+    .sub-header-title { font-size: 17px; font-weight: 600; }
+
+    /* ── Shared: chips ── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      flex: 1 1 auto; min-width: 0; padding: 8px 10px; border-radius: 10px;
+      background: var(--card); border: 2px solid transparent;
+      font-size: 13px; font-weight: 500; color: var(--sub);
+      cursor: pointer; text-align: center; white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .chip.selected { background: #007AFF18; border-color: var(--accent); color: var(--accent); }
+    .chip-group.deadline .chip { flex: 0 0 calc(33.333% - 6px); }
+    .chip-group.notify  .chip { flex: 1 1 0; min-width: 40px; padding: 8px 4px; }
+    .chip-group.msort   { flex-wrap: nowrap; gap: 6px; }
+    .chip-group.msort .chip { flex: 0 0 auto; padding: 6px 14px; }
+    .chip-group.interval { flex-wrap: nowrap; gap: 6px; }
+    .chip-group.interval .chip { flex: 1 1 0; padding: 8px 4px; }
+
+    /* ── Shared: toggle ── */
+    .toggle { position: relative; width: 51px; height: 31px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track { position: absolute; inset: 0; background: #E5E5EA; border-radius: 31px; transition: background 0.25s; cursor: pointer; }
+    .toggle input:checked + .toggle-track { background: var(--green); }
+    .toggle-thumb {
+      position: absolute; top: 2px; left: 2px; width: 27px; height: 27px;
+      background: white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); pointer-events: none;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border-radius: 10px; padding: 12px 14px;
+    }
+    .toggle-row-label { font-size: 15px; color: var(--text); }
+    .toggle-row-sub   { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+    /* ── Shared: form fields ── */
+    .form-group { margin-bottom: 18px; }
+    .form-label { font-size: 13px; color: var(--sub); margin-bottom: 8px; display: block; font-weight: 500; }
+    .form-input, .form-textarea {
+      width: 100%; background: var(--card); border: none; border-radius: 10px;
+      padding: 12px 14px; font-size: 15px; font-family: inherit; color: var(--text);
+      outline: none; -webkit-appearance: none; appearance: none;
+    }
+    .form-textarea { resize: none; min-height: 72px; }
+    .form-input:focus, .form-textarea:focus { box-shadow: 0 0 0 2px var(--accent); }
+
+    /* ── Shared: perm-btn ── */
+    .perm-btn {
+      width: 100%; padding: 11px 14px; background: var(--accent); color: white;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    .perm-btn:active { opacity: 0.85; }
+    .perm-btn:disabled { background: var(--sub); cursor: default; }
+
+    /* ── Shared: settings layout ── */
+    .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .settings-toggle-label { font-size: 15px; font-weight: 500; color: var(--text); }
+    .settings-toggle-sub   { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+    /* ═══════════════════════════
+       DASHBOARD
+    ═══════════════════════════ */
+    #db-app-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: calc(var(--header-h) + var(--safe-top));
+      padding-top: var(--safe-top);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      display: flex; align-items: center; padding-inline: 16px; z-index: 100;
+    }
+    .db-app-title { font-size: 17px; font-weight: 700; color: var(--text); }
+    #db-header {
+      padding-top: calc(var(--header-h) + var(--safe-top) + 20px);
+      padding-inline: 20px; padding-bottom: 4px;
+    }
+    #db-date { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.1; }
+    #db-weekday { font-size: 15px; color: var(--sub); margin-top: 4px; font-weight: 500; }
+    #db-body {
+      padding-inline: 16px;
+      padding-bottom: calc(80px + var(--safe-bottom));
+      padding-top: 20px;
+    }
+    .db-section { margin-bottom: 24px; }
+    .db-section-label {
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      letter-spacing: 0.3px; margin-bottom: 8px; padding-left: 2px;
+    }
+    .db-card {
+      background: var(--card); border-radius: 12px; padding: 13px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 8px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .db-card:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .db-card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .db-card-title { font-size: 15px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .db-card-sub { font-size: 12px; color: var(--sub); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+    .db-card-stars { display: flex; gap: 1px; flex-shrink: 0; }
+    .db-card-star { font-size: 13px; color: #C7C7CC; }
+    .db-card-star.on { color: var(--orange); }
+    .db-empty {
+      text-align: center; padding: 20px 16px; color: var(--sub);
+      font-size: 14px; background: var(--card); border-radius: 12px;
+    }
+
+    /* ═══════════════════════════
+       TASKS APP
+    ═══════════════════════════ */
+
+    /* Notification banner */
+    #t-notif-banner {
+      position: fixed; top: calc(var(--header-h) + var(--safe-top));
+      left: 0; right: 0; background: var(--accent); color: white; z-index: 110;
+      opacity: 0; pointer-events: none; transform: translateY(-6px);
+      transition: opacity 0.25s, transform 0.25s cubic-bezier(0.4,0,0.2,1);
+      display: flex; align-items: center; padding: 11px 14px; gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,122,255,0.35);
+    }
+    #t-notif-banner.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    #t-notif-banner-text { flex: 1; font-size: 13px; font-weight: 500; line-height: 1.3; }
+    #t-notif-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .banner-btn {
+      padding: 5px 11px; border-radius: 7px; border: none; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #t-notif-banner-check { background: white; color: var(--accent); }
+    #t-notif-banner-close { background: rgba(255,255,255,0.22); color: white; font-size: 16px; padding: 4px 10px; }
+
+    /* Tasks main */
+    #t-main {
+      padding-top: calc(var(--header-h) + var(--safe-top) + 16px);
+      padding-bottom: calc(88px + var(--safe-bottom));
+      padding-inline: 16px; min-height: 100dvh;
+    }
+    .task-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .task-card {
+      background: var(--card); border-radius: 12px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .task-card.pop-active { box-shadow: 0 4px 16px rgba(0,0,0,0.15); transform: scale(0.99); }
+    .task-card-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+    .task-card-meta { font-size: 12px; color: var(--sub); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-asap  { background: #FF3B3020; color: var(--danger); }
+    .badge-today { background: #FF950020; color: var(--orange); }
+    .badge-week  { background: #007AFF20; color: var(--accent); }
+    .badge-done  { background: #34C75920; color: var(--green); }
+    .badge-lock  { background: #8E8E9320; color: var(--sub); }
+
+    /* FAB */
+    #t-fab {
+      position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom));
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent); color: white; font-size: 28px; line-height: 1;
+      border: none; box-shadow: 0 4px 12px rgba(0,122,255,0.4);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 100; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #t-fab:active { transform: scale(0.92); box-shadow: 0 2px 6px rgba(0,122,255,0.3); }
+
+    /* Pop menu */
+    #t-pop-backdrop { position: fixed; inset: 0; z-index: 150; display: none; }
+    #t-pop-backdrop.open { display: block; }
+    #t-pop-menu {
+      position: fixed; z-index: 151; background: var(--card);
+      border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
+      min-width: 200px; overflow: hidden;
+      opacity: 0; transform: scale(0.88); pointer-events: none;
+      transition: opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1);
+    }
+    #t-pop-menu.open { opacity: 1; transform: scale(1); pointer-events: auto; }
+    .pop-item {
+      width: 100%; padding: 15px 16px; border: none; background: none;
+      display: flex; align-items: center; gap: 12px; font-size: 15px; font-family: inherit;
+      cursor: pointer; position: relative; overflow: hidden;
+      -webkit-tap-highlight-color: transparent; touch-action: none; user-select: none;
+    }
+    .pop-item:active { background: var(--bg); }
+    .pop-item-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+    .pop-item-label { flex: 1; text-align: left; }
+    .pop-done .pop-item-label { color: var(--green); font-weight: 600; }
+    .pop-done-hint { font-size: 11px; color: var(--sub); margin-top: 1px; }
+    #t-pop-done-progress { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: rgba(52,199,89,0.18); pointer-events: none; }
+    .pop-divider { height: 1px; background: rgba(0,0,0,0.08); margin: 0 12px; }
+
+    /* Manage screen */
+    #t-manage-sort-bar {
+      background: var(--card); padding: 10px 16px 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+    }
+    .manage-sort-row { display: flex; align-items: center; gap: 10px; }
+    .manage-sort-label { font-size: 12px; font-weight: 500; color: var(--sub); white-space: nowrap; min-width: 44px; }
+    #t-manage-body {
+      flex: 1; overflow-y: auto; padding: 12px 0 84px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .manage-section-label {
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px; padding: 20px 16px 8px;
+    }
+    .manage-empty { text-align: center; padding: 32px 20px; color: var(--sub); font-size: 14px; }
+    .manage-row {
+      display: flex; align-items: stretch; background: var(--card);
+      margin: 0 12px 8px; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07); border: 2px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .manage-row.checked { border-color: var(--accent); background: rgba(0,122,255,0.07); }
+    .manage-cb-area {
+      width: 52px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; cursor: pointer; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .manage-cb-icon {
+      width: 24px; height: 24px; border-radius: 7px; border: 2px solid #C7C7CC;
+      background: white; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, border-color 0.15s; pointer-events: none;
+    }
+    .manage-cb-icon.on { background: var(--accent); border-color: var(--accent); }
+    .manage-cb-icon.on::after {
+      content: ''; display: block; width: 5px; height: 9px;
+      border-right: 2.5px solid white; border-bottom: 2.5px solid white;
+      transform: rotate(45deg) translate(-1px,-1px);
+    }
+    .manage-row-content { flex: 1; padding: 12px 14px 12px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; min-width: 0; }
+    .manage-row-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .manage-row-meta { font-size: 11px; color: var(--sub); display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    #t-manage-delete-bar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom));
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 1;
+    }
+    #t-manage-delete-bar.visible { transform: translateY(0); }
+    #t-manage-delete-btn {
+      width: 100%; background: var(--danger); color: white; border: none;
+      border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    #t-manage-delete-btn:active { opacity: 0.85; }
+
+    /* Settings screen */
+    #t-settings-body { flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch; }
+    .settings-section { margin-bottom: 28px; }
+    .settings-section-title {
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 4px;
+    }
+    .settings-group { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    .settings-row { padding: 14px 16px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-subrow { background: var(--bg); padding: 12px 16px; }
+    #t-setting-perm-status { margin-top: 8px; font-size: 12px; color: var(--sub); text-align: center; line-height: 1.4; }
+
+    /* Sheet */
+    #t-sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    #t-sheet-overlay.open { opacity: 1; pointer-events: auto; }
+    #t-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--bg); border-radius: 20px 20px 0 0;
+      z-index: 301; transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      padding-bottom: var(--safe-bottom); max-height: 94dvh;
+      display: flex; flex-direction: column;
+    }
+    #t-sheet.open { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: #C7C7CC; border-radius: 2px; margin: 10px auto 0; flex-shrink: 0; }
+    .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; flex-shrink: 0; }
+    .sheet-header h2 { font-size: 17px; font-weight: 600; }
+    .sheet-close {
+      width: 30px; height: 30px; border-radius: 50%; background: #E5E5EA;
+      border: none; cursor: pointer; font-size: 16px; color: var(--sub);
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-body { overflow-y: auto; padding: 0 16px 24px; flex: 1; -webkit-overflow-scrolling: touch; }
+    .form-submit {
+      width: 100%; background: var(--accent); color: white; border: none;
+      border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 8px; -webkit-tap-highlight-color: transparent;
+    }
+    .form-submit:active { opacity: 0.85; }
+    #t-deadline-datetime-wrap { margin-top: 10px; display: none; }
+    #t-deadline-datetime-wrap.visible { display: block; }
+
+    /* Task confirm */
+    #t-confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s; padding-inline: 32px;
+    }
+    #t-confirm-overlay.open { opacity: 1; pointer-events: auto; }
+    #t-confirm-box {
+      background: var(--card); border-radius: 16px; width: 100%; max-width: 320px;
+      overflow: hidden; transform: scale(0.92); transition: transform 0.2s;
+    }
+    #t-confirm-overlay.open #t-confirm-box { transform: scale(1); }
+    .t-confirm-body { padding: 24px 20px 16px; text-align: center; }
+    .t-confirm-body h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-title-preview {
+      font-size: 15px; font-weight: 500; color: var(--text);
+      margin-top: 10px; background: var(--bg); border-radius: 8px; padding: 8px 12px; word-break: break-all;
+    }
+    .confirm-detail { font-size: 13px; color: var(--sub); line-height: 1.6; margin-top: 8px; }
+    .confirm-actions { display: flex; border-top: 1px solid rgba(0,0,0,0.08); }
+    .confirm-btn {
+      flex: 1; padding: 14px; border: none; background: none;
+      font-size: 16px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    .confirm-btn:active { background: var(--bg); }
+    .confirm-btn + .confirm-btn { border-left: 1px solid rgba(0,0,0,0.08); }
+    .confirm-btn-cancel { color: var(--sub); }
+    .confirm-btn-ok { color: var(--accent); font-weight: 600; }
+
+    /* Sync indicator */
+    #t-sync-indicator {
+      position: absolute; right: calc(var(--nav-w) + 8px);
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    #t-sync-indicator.active { opacity: 1; }
+    #t-sync-indicator svg { animation: spin 0.9s linear infinite; }
+
+    /* Pull-to-refresh */
+    #t-ptr-wrap {
+      position: fixed; top: calc(var(--header-h) + var(--safe-top));
+      left: 0; right: 0; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 90; transform: translateY(-56px); will-change: transform;
+      pointer-events: none; user-select: none;
+    }
+    #t-ptr-pill {
+      width: 38px; height: 38px; background: var(--card); border-radius: 50%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #t-ptr-arrow { display: flex; align-items: center; justify-content: center; color: var(--accent); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); }
+    #t-ptr-wrap.ptr-ready #t-ptr-arrow { transform: rotate(180deg); }
+    #t-ptr-spin { display: none; align-items: center; justify-content: center; animation: spin 0.9s linear infinite; }
+    #t-ptr-wrap.ptr-loading #t-ptr-arrow { display: none; }
+    #t-ptr-wrap.ptr-loading #t-ptr-spin  { display: flex; }
+
+    /* Drive login popup */
+    #drive-login-popup-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s; padding-inline: 32px;
+    }
+    #drive-login-popup-overlay.open { opacity: 1; pointer-events: auto; }
+    #drive-login-popup {
+      background: var(--card); border-radius: 20px; width: 100%; max-width: 320px;
+      padding: 28px 20px; text-align: center;
+      transform: scale(0.92); transition: transform 0.2s;
+    }
+    #drive-login-popup-overlay.open #drive-login-popup { transform: scale(1); }
+    .dlp-icon { font-size: 44px; margin-bottom: 16px; }
+    #drive-login-popup h3 { font-size: 16px; font-weight: 600; margin-bottom: 24px; line-height: 1.5; color: var(--text); }
+    #dlp-login-btn {
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      background: var(--accent); color: white; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; margin-bottom: 10px; -webkit-tap-highlight-color: transparent;
+    }
+    #dlp-login-btn:active { opacity: 0.85; }
+    #dlp-skip-btn {
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      background: none; color: var(--sub); font-size: 15px;
+      cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    #dlp-skip-btn:active { background: var(--bg); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════
+       VETLEARN APP
+    ═══════════════════════════ */
+    #v-sync-indicator {
+      position: absolute; right: calc(var(--nav-w) + 8px);
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    #v-sync-indicator.active { opacity: 1; }
+    #v-sync-indicator svg { animation: spin 0.9s linear infinite; }
+    #v-home {
+      padding-top: calc(var(--header-h) + var(--safe-top) + 12px);
+      padding-bottom: calc(80px + var(--safe-bottom));
+      padding-inline: 16px; min-height: 100dvh;
+    }
+    .v-search-wrap { position: relative; margin-bottom: 20px; }
+    .v-search-wrap input {
+      width: 100%; padding: 10px 36px 10px 38px;
+      background: var(--card); border: none; border-radius: 12px;
+      font-size: 16px; font-family: inherit; color: var(--text);
+      outline: none; -webkit-appearance: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .v-search-wrap input:focus { box-shadow: 0 0 0 2px var(--accent); }
+    .v-search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      color: var(--sub); pointer-events: none;
+    }
+    .v-search-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%; background: var(--sub);
+      border: none; color: white; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .v-search-clear.hidden { display: none; }
+    .v-section-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .v-section-row .section-label { margin-bottom: 0; }
+    .v-refresh-btn {
+      background: none; border: none; cursor: pointer; color: var(--accent);
+      font-size: 22px; padding: 4px; -webkit-tap-highlight-color: transparent;
+    }
+    .v-refresh-btn:active { transform: rotate(180deg); transition: transform 0.4s; }
+    .v-review-card {
+      background: var(--card); border-radius: 14px; padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.09); margin-bottom: 12px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s; user-select: none;
+    }
+    .v-review-card:active { transform: scale(0.98); }
+    .v-review-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .v-review-card-name { font-size: 18px; font-weight: 700; line-height: 1.3; flex: 1; }
+    .v-review-card-trust { font-size: 20px; flex-shrink: 0; }
+    .v-review-card-crumb { font-size: 11px; color: var(--sub); margin-bottom: 8px; }
+    .v-review-card-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .v-stars-small { display: flex; gap: 2px; }
+    .v-star-s { font-size: 14px; color: #C7C7CC; }
+    .v-star-s.on { color: var(--orange); }
+    .v-overdue-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #FF3B3020; color: var(--danger); }
+    .v-review-date-small { font-size: 11px; color: var(--sub); }
+    .v-item-row {
+      background: var(--card); border-radius: 12px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07); margin-bottom: 8px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent; display: flex;
+      align-items: center; gap: 10px; user-select: none;
+    }
+    .v-item-row:active { background: #F8F8F8; }
+    .v-item-row-main { flex: 1; min-width: 0; }
+    .v-item-row-name { font-size: 15px; font-weight: 500; margin-bottom: 2px; }
+    .v-item-row-sub { font-size: 11px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .v-item-row-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .v-item-trust { font-size: 16px; }
+    .v-sel-item-row {
+      background: var(--card); border-radius: 12px; margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07); display: flex; align-items: stretch;
+      overflow: hidden; border: 2px solid transparent;
+      transition: border-color 0.15s, background 0.15s; user-select: none;
+    }
+    .v-sel-item-row.checked { border-color: var(--accent); background: rgba(0,122,255,0.07); }
+    .v-sel-cb-area {
+      width: 52px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .v-sel-cb-icon {
+      width: 24px; height: 24px; border-radius: 7px; border: 2px solid #C7C7CC; background: white;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, border-color 0.15s; pointer-events: none;
+    }
+    .v-sel-cb-icon.on { background: var(--accent); border-color: var(--accent); }
+    .v-sel-cb-icon.on::after {
+      content: ''; display: block; width: 5px; height: 9px;
+      border-right: 2.5px solid white; border-bottom: 2.5px solid white;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .v-sel-item-content { flex: 1; padding: 14px 14px 14px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; min-width: 0; }
+    .sub-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(20px + var(--safe-bottom)); }
+    #v-items-delete-bar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom));
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 1;
+    }
+    #v-items-delete-bar.visible { transform: translateY(0); }
+    #v-items-delete-btn {
+      width: 100%; background: var(--danger); color: white; border: none;
+      border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    #v-items-delete-btn:active { opacity: 0.85; }
+    #v-fab {
+      position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom));
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent); color: white; font-size: 28px;
+      border: none; box-shadow: 0 4px 12px rgba(0,122,255,0.4);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 100; -webkit-tap-highlight-color: transparent; transition: transform 0.15s;
+    }
+    #v-fab:active { transform: scale(0.92); }
+    .v-cat-list { list-style: none; }
+    .v-cat-node { border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .v-cat-row { display: flex; align-items: center; gap: 4px; padding: 0 16px; min-height: 50px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .v-cat-row:active { background: #F0F0F5; }
+    .v-cat-chevron-btn {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; color: var(--sub); flex-shrink: 0;
+      font-size: 18px; transition: transform 0.2s; -webkit-tap-highlight-color: transparent;
+    }
+    .v-cat-node.expanded > .v-cat-row > .v-cat-chevron-btn { transform: rotate(90deg); }
+    .v-cat-name-btn { flex: 1; text-align: left; background: none; border: none; font-size: 15px; font-family: inherit; color: var(--text); cursor: pointer; padding: 12px 0; -webkit-tap-highlight-color: transparent; }
+    .v-cat-count { font-size: 12px; color: var(--sub); flex-shrink: 0; }
+    .v-cat-children { display: none; padding-left: 16px; border-left: 2px solid rgba(0,122,255,0.2); margin-left: 28px; }
+    .v-cat-node.expanded > .v-cat-children { display: block; }
+    .v-cat-spacer { width: 32px; flex-shrink: 0; }
+    .v-detail-wrap { padding: 20px 16px; }
+    .v-breadcrumb { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 11px; color: var(--sub); margin-bottom: 16px; line-height: 1.4; }
+    .v-breadcrumb-sep { opacity: 0.6; }
+    .v-detail-name { font-size: 26px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+    .v-detail-meta-card {
+      background: var(--card); border-radius: 14px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .v-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .v-meta-label { font-size: 12px; color: var(--sub); font-weight: 500; flex-shrink: 0; }
+    .v-review-date-val { font-size: 14px; font-weight: 500; }
+    .v-review-date-val.overdue { color: var(--danger); }
+    .v-stars-big { display: flex; gap: 6px; }
+    .v-star-big { font-size: 26px; cursor: pointer; color: #C7C7CC; -webkit-tap-highlight-color: transparent; transition: transform 0.1s; user-select: none; }
+    .v-star-big.on { color: var(--orange); }
+    .v-star-big:active { transform: scale(1.25); }
+    .v-trust-flag-btn { font-size: 28px; cursor: pointer; background: none; border: none; -webkit-tap-highlight-color: transparent; padding: 4px; transition: transform 0.15s; }
+    .v-trust-flag-btn:active { transform: scale(1.3); }
+    .v-detail-section { background: var(--card); border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px; }
+    .v-detail-section-title { font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .v-detail-section-body { font-size: 15px; line-height: 1.7; white-space: pre-wrap; color: var(--text); user-select: text; -webkit-user-select: text; }
+    .v-detail-section-empty { font-size: 14px; color: var(--sub); font-style: italic; }
+    .v-related-tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+    .v-related-tag-chip { padding: 6px 12px; border-radius: 20px; background: rgba(0,122,255,0.1); color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; border: none; }
+    .v-related-tag-chip:active { background: rgba(0,122,255,0.2); }
+    .v-detail-edit-btn { width: 100%; margin-top: 20px; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    .v-detail-edit-btn:active { opacity: 0.85; }
+    .v-detail-delete-btn { width: 100%; margin-top: 10px; padding: 15px; background: none; color: var(--danger); border: 1px solid var(--danger); border-radius: 14px; font-size: 16px; font-weight: 500; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    .v-detail-delete-btn:active { background: #FF3B3010; }
+    .v-detail-attach-img { width: 100%; max-width: 320px; border-radius: 10px; margin-bottom: 8px; display: block; cursor: pointer; }
+    .v-edit-wrap { padding: 16px; }
+    .v-cat-selects { display: flex; flex-direction: column; gap: 8px; }
+    .v-cat-level-wrap { display: flex; align-items: center; gap: 6px; }
+    .v-cat-level-label { font-size: 11px; color: var(--sub); flex-shrink: 0; width: 44px; }
+    .form-select {
+      width: 100%; background: var(--card); border: none; border-radius: 10px;
+      padding: 12px 14px; font-size: 15px; font-family: inherit; color: var(--text);
+      outline: none; -webkit-appearance: none; appearance: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238E8E93' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer;
+    }
+    .form-select:focus { box-shadow: 0 0 0 2px var(--accent); }
+    .v-related-edit-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .v-related-chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
+    .v-rel-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: rgba(0,122,255,0.12); border-radius: 20px; font-size: 13px; color: var(--accent); }
+    .v-rel-chip-del { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 16px; line-height: 1; padding: 0 2px; -webkit-tap-highlight-color: transparent; }
+    .v-related-dropdown { background: var(--card); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-height: 180px; overflow-y: auto; display: none; }
+    .v-related-dropdown.open { display: block; }
+    .v-rel-option { padding: 12px 14px; cursor: pointer; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.05); -webkit-tap-highlight-color: transparent; }
+    .v-rel-option:last-child { border-bottom: none; }
+    .v-rel-option:active { background: var(--bg); }
+    .v-attach-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .v-attach-thumb-wrap { position: relative; display: inline-block; }
+    .v-attach-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; display: block; }
+    .v-attach-del-btn { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: white; border: none; font-size: 13px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+    .v-attach-add-label { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--bg); border-radius: 10px; font-size: 14px; color: var(--accent); cursor: pointer; border: 1.5px dashed var(--accent); margin-top: 4px; -webkit-tap-highlight-color: transparent; }
+    .v-settings-card { background: var(--card); border-radius: 14px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+    .v-settings-card-title { font-size: 13px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .v-settings-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-bottom: 10px; -webkit-tap-highlight-color: transparent; }
+    .v-settings-btn:last-child { margin-bottom: 0; }
+    .v-settings-btn:active { opacity: 0.85; }
+    .v-settings-btn-primary { background: var(--accent); color: white; }
+    .v-settings-btn-success { background: var(--green); color: white; }
+    .v-settings-btn-danger { background: none; color: var(--danger); border: 1px solid var(--danger); }
+    .v-settings-hint { font-size: 12px; color: var(--sub); line-height: 1.6; margin-top: 8px; }
+    .v-data-stat { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; }
+    .v-data-stat:last-child { border-bottom: none; }
+    .v-data-stat-val { font-weight: 600; color: var(--accent); }
+    #v-toast {
+      position: fixed; bottom: calc(32px + var(--safe-bottom)); left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.75); color: white; padding: 10px 20px;
+      border-radius: 20px; font-size: 14px; font-weight: 500;
+      z-index: 999; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s; white-space: nowrap;
+    }
+    #v-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #v-img-popup {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 950;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    #v-img-popup.open { opacity: 1; pointer-events: auto; }
+    #v-img-popup-close {
+      position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); color: white; border: none; font-size: 24px; cursor: pointer;
+      z-index: 951; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;
+    }
+    #v-img-popup-close:active { background: rgba(255,255,255,0.35); }
+    #v-img-popup-inner { touch-action: none; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; }
+    #v-img-popup-img { max-width: 100vw; max-height: 100vh; object-fit: contain; user-select: none; -webkit-user-select: none; border-radius: 4px; transform-origin: center center; will-change: transform; }
+    #v-confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 800;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s; padding-inline: 32px;
+    }
+    #v-confirm-overlay.open { opacity: 1; pointer-events: auto; }
+    #v-confirm-box { background: var(--card); border-radius: 16px; width: 100%; max-width: 300px; overflow: hidden; transform: scale(0.92); transition: transform 0.2s; }
+    #v-confirm-overlay.open #v-confirm-box { transform: scale(1); }
+    .v-confirm-body { padding: 22px 20px 14px; text-align: center; }
+    .v-confirm-body h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .v-confirm-body p { font-size: 14px; color: var(--sub); line-height: 1.5; }
+    .v-confirm-actions { display: flex; border-top: 1px solid rgba(0,0,0,0.08); }
+    .v-confirm-btn { flex: 1; padding: 14px; border: none; background: none; font-size: 16px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    .v-confirm-btn:active { background: var(--bg); }
+    .v-confirm-btn + .v-confirm-btn { border-left: 1px solid rgba(0,0,0,0.08); }
+    .v-confirm-cancel { color: var(--sub); }
+    .v-confirm-ok { color: var(--danger); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════
+       NAV BAR
+  ══════════════════════════════════════ -->
+  <div id="nav-bar">
+    <button class="nav-btn active" id="nav-btn-dashboard" data-screen="dashboard">
+      <div class="nav-progress"></div><span class="nav-icon">⏰</span>
+    </button>
+    <button class="nav-btn" id="nav-btn-tasks" data-screen="tasks">
+      <div class="nav-progress"></div><span class="nav-icon">📋</span>
+    </button>
+    <button class="nav-btn" id="nav-btn-vetlearn" data-screen="vetlearn">
+      <div class="nav-progress"></div><span class="nav-icon">✏️</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DRIVE LOGIN POPUP (z-index 3000)
+  ══════════════════════════════════════ -->
+  <div id="drive-login-popup-overlay">
+    <div id="drive-login-popup">
+      <div class="dlp-icon">☁️</div>
+      <h3>Googleドライブと連携するとデータが同期されます</h3>
+      <button id="dlp-login-btn">ログインして連携する</button>
+      <button id="dlp-skip-btn">今はしない</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN: DASHBOARD
+  ══════════════════════════════════════ -->
+  <div id="screen-dashboard" class="app-screen active">
+    <div id="db-app-header">
+      <span class="db-app-title">StudyAssist</span>
+    </div>
+    <div id="db-header">
+      <div id="db-date">読み込み中...</div>
+      <div id="db-weekday"></div>
+    </div>
+    <div id="db-body">
+      <div class="db-section">
+        <div class="db-section-label">📋 今日のタスク</div>
+        <div id="db-tasks"><div class="db-empty">読み込み中...</div></div>
+      </div>
+      <div class="db-section">
+        <div class="db-section-label">📖 本日の復習項目</div>
+        <div id="db-reviews"><div class="db-empty">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN: TASKS
+  ══════════════════════════════════════ -->
+  <div id="screen-tasks" class="app-screen">
+
+    <!-- Header -->
+    <header class="app-header">
+      <button class="header-hamburger" id="t-hamburger-btn" aria-label="メニュー">
+        <svg width="22" height="15" viewBox="0 0 22 15" fill="currentColor">
+          <rect width="22" height="2.2" rx="1.1"/>
+          <rect y="6.4" width="22" height="2.2" rx="1.1"/>
+          <rect y="12.8" width="22" height="2.2" rx="1.1"/>
+        </svg>
+      </button>
+      <span class="header-title">タスク管理</span>
+      <div id="t-sync-indicator" aria-label="同期中">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- Pull-to-refresh -->
+    <div id="t-ptr-wrap" aria-hidden="true">
+      <div id="t-ptr-pill">
+        <div id="t-ptr-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/>
+          </svg>
+        </div>
+        <div id="t-ptr-spin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification banner -->
+    <div id="t-notif-banner" role="alert">
+      <div id="t-notif-banner-text">0件の未完了タスクがあります</div>
+      <div id="t-notif-banner-actions">
+        <button id="t-notif-banner-check" class="banner-btn">確認</button>
+        <button id="t-notif-banner-close" class="banner-btn">×</button>
+      </div>
+    </div>
+
+    <!-- Drawer -->
+    <div id="t-drawer-overlay" class="drawer-overlay"></div>
+    <nav id="t-drawer" class="drawer-panel">
+      <div class="drawer-header">メニュー</div>
+      <ul class="drawer-menu">
+        <li><a href="#" id="t-menu-manage"><span class="icon">📋</span>一括管理</a></li>
+        <li><a href="#" id="t-menu-settings"><span class="icon">⚙️</span>設定</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main -->
+    <main id="t-main">
+      <div class="section-label">優先タスク</div>
+      <div class="task-list" id="t-priority-list"></div>
+    </main>
+
+    <!-- FAB -->
+    <button id="t-fab" aria-label="タスクを追加">＋</button>
+
+    <!-- Pop menu -->
+    <div id="t-pop-backdrop"></div>
+    <div id="t-pop-menu" role="menu">
+      <button id="t-pop-done-btn" class="pop-item pop-done" oncontextmenu="return false">
+        <div id="t-pop-done-progress"></div>
+        <span class="pop-item-icon">✓</span>
+        <div class="pop-item-label">
+          <div>完了</div>
+          <div class="pop-done-hint">2秒長押しで実行</div>
+        </div>
+      </button>
+      <div class="pop-divider"></div>
+      <button id="t-pop-edit-btn" class="pop-item">
+        <span class="pop-item-icon">✏️</span>
+        <span class="pop-item-label">編集</span>
+      </button>
+    </div>
+
+    <!-- Manage screen -->
+    <div id="t-manage-screen" class="sub-screen">
+      <div class="sub-header">
+        <button id="t-manage-back-btn" class="sub-back-btn">‹</button>
+        <span class="sub-header-title">一括管理</span>
+        <div style="width:44px"></div>
+      </div>
+      <div id="t-manage-sort-bar">
+        <div class="manage-sort-row">
+          <span class="manage-sort-label">並べ替え</span>
+          <div class="chip-group msort" id="t-sort-key-chips">
+            <button type="button" class="chip selected" data-val="deadline">期限</button>
+            <button type="button" class="chip" data-val="start">開始日時</button>
+          </div>
+        </div>
+        <div class="manage-sort-row">
+          <span class="manage-sort-label">順序</span>
+          <div class="chip-group msort" id="t-sort-dir-chips">
+            <button type="button" class="chip selected" data-val="asc">昇順 ↑</button>
+            <button type="button" class="chip" data-val="desc">降順 ↓</button>
+          </div>
+        </div>
+      </div>
+      <div id="t-manage-body">
+        <div id="t-manage-pending-list"></div>
+        <div id="t-manage-done-section">
+          <div class="manage-section-label">完了済み</div>
+          <div id="t-manage-done-list"></div>
+        </div>
+      </div>
+      <div id="t-manage-delete-bar">
+        <button id="t-manage-delete-btn">削除</button>
+      </div>
+    </div>
+
+    <!-- Settings screen -->
+    <div id="t-settings-screen" class="sub-screen">
+      <div class="sub-header">
+        <button id="t-settings-back-btn" class="sub-back-btn">‹</button>
+        <span class="sub-header-title">設定</span>
+        <div style="width:44px"></div>
+      </div>
+      <div id="t-settings-body">
+        <div class="settings-section">
+          <div class="settings-section-title">通知</div>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div class="settings-toggle-row">
+                <div>
+                  <div class="settings-toggle-label">未完了タスク通知</div>
+                  <div class="settings-toggle-sub">未完了タスクがある場合に通知します</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="t-setting-notify-toggle">
+                  <div class="toggle-track"></div><div class="toggle-thumb"></div>
+                </label>
+              </div>
+            </div>
+            <div id="t-setting-interval-row" class="settings-row settings-subrow" style="display:none">
+              <div class="form-label" style="margin-bottom:8px">通知間隔</div>
+              <div class="chip-group interval" id="t-notify-interval-chips">
+                <button type="button" class="chip" data-val="30">30分</button>
+                <button type="button" class="chip selected" data-val="60">1時間</button>
+                <button type="button" class="chip" data-val="180">3時間</button>
+                <button type="button" class="chip" data-val="360">6時間</button>
+              </div>
+            </div>
+            <div id="t-setting-perm-row" class="settings-row settings-subrow" style="display:none">
+              <button id="t-setting-request-perm" class="perm-btn">バックグラウンド通知を許可する</button>
+              <div id="t-setting-perm-status"></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">データ同期</div>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div class="settings-toggle-row">
+                <div>
+                  <div class="settings-toggle-label">Googleドライブ連携</div>
+                  <div class="settings-toggle-sub">tasks.jsonをGoogleドライブに自動同期</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="t-setting-drive-toggle">
+                  <div class="toggle-track"></div><div class="toggle-thumb"></div>
+                </label>
+              </div>
+            </div>
+            <div id="t-setting-drive-subrow" class="settings-row settings-subrow" style="display:none">
+              <div id="t-drive-signin-area">
+                <button id="t-drive-sign-in-btn" class="perm-btn">Googleアカウントでログイン</button>
+              </div>
+              <div id="t-drive-account-area" style="display:none">
+                <div id="t-drive-account-status" style="font-size:13px;color:var(--sub);margin-bottom:8px;text-align:center"></div>
+                <button id="t-drive-sign-out-btn" class="perm-btn" style="background:var(--danger)">ログアウト</button>
+              </div>
+              <div id="t-drive-sync-status" style="margin-top:8px;font-size:12px;color:var(--sub);text-align:center;min-height:16px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sheet (add/edit) -->
+    <div id="t-sheet-overlay"></div>
+    <div id="t-sheet" role="dialog" aria-modal="true">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2 id="t-sheet-title">タスクを追加</h2>
+        <button class="sheet-close" id="t-sheet-close-btn">✕</button>
+      </div>
+      <div class="sheet-body">
+        <form id="t-task-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="t-task-title">タスク *</label>
+            <input class="form-input" id="t-task-title" type="text" placeholder="タスクを入力" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="t-task-start">開始日時（任意）</label>
+            <input class="form-input" id="t-task-start" type="datetime-local">
+          </div>
+          <div class="form-group">
+            <div class="form-label">期限</div>
+            <div class="chip-group deadline" id="t-deadline-chips">
+              <button type="button" class="chip selected" data-val="asap">ASAP</button>
+              <button type="button" class="chip" data-val="today">今日中</button>
+              <button type="button" class="chip" data-val="fri">今週中(金)</button>
+              <button type="button" class="chip" data-val="sun">今週中(日)</button>
+              <button type="button" class="chip" data-val="datetime">日時指定</button>
+              <button type="button" class="chip" data-val="none">なし</button>
+            </div>
+            <div id="t-deadline-datetime-wrap">
+              <input class="form-input" id="t-task-deadline-dt" type="datetime-local">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">保護</div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-row-label">完了後も保持</div>
+                <div class="toggle-row-sub">完了しても削除せず完了済みとして残す</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="t-task-protect">
+                <div class="toggle-track"></div><div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">通知優先（期限の何時間前から表示）</div>
+            <div class="chip-group notify" id="t-notify-chips">
+              <button type="button" class="chip" data-val="6">6h</button>
+              <button type="button" class="chip" data-val="12">12h</button>
+              <button type="button" class="chip selected" data-val="24">24h</button>
+              <button type="button" class="chip" data-val="48">48h</button>
+              <button type="button" class="chip" data-val="72">72h</button>
+              <button type="button" class="chip" data-val="168">1w</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="t-task-note">備考（任意）</label>
+            <textarea class="form-textarea" id="t-task-note" placeholder="メモ"></textarea>
+          </div>
+          <button type="submit" class="form-submit" id="t-form-submit-btn">追加する</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirm -->
+    <div id="t-confirm-overlay">
+      <div id="t-confirm-box">
+        <div class="t-confirm-body">
+          <h3 id="t-confirm-heading">タスクを追加しますか？</h3>
+          <div class="confirm-title-preview" id="t-confirm-preview"></div>
+          <div class="confirm-detail" id="t-confirm-detail"></div>
+        </div>
+        <div class="confirm-actions">
+          <button class="confirm-btn confirm-btn-cancel" id="t-confirm-cancel">キャンセル</button>
+          <button class="confirm-btn confirm-btn-ok" id="t-confirm-ok">追加</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #screen-tasks -->
+
+
+  <!-- ══════════════════════════════════════
+       SCREEN: VETLEARN
+  ══════════════════════════════════════ -->
+  <div id="screen-vetlearn" class="app-screen">
+
+    <!-- Header -->
+    <header class="app-header">
+      <button class="header-hamburger" id="v-hamburger-btn" aria-label="メニュー">
+        <svg width="22" height="15" viewBox="0 0 22 15" fill="currentColor">
+          <rect width="22" height="2.2" rx="1.1"/>
+          <rect y="6.4" width="22" height="2.2" rx="1.1"/>
+          <rect y="12.8" width="22" height="2.2" rx="1.1"/>
+        </svg>
+      </button>
+      <span class="header-title">学習DB</span>
+      <div id="v-sync-indicator" aria-label="同期中">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- Drawer -->
+    <div id="v-drawer-overlay" class="drawer-overlay"></div>
+    <nav id="v-drawer" class="drawer-panel">
+      <div class="drawer-header">メニュー</div>
+      <ul class="drawer-menu">
+        <li><a href="#" id="v-menu-categories"><span class="icon">📚</span>項目一覧</a></li>
+        <li><a href="#" id="v-menu-settings"><span class="icon">⚙️</span>設定・インポート</a></li>
+      </ul>
+    </nav>
+
+    <!-- Home -->
+    <main id="v-home">
+      <div class="v-search-wrap">
+        <span class="v-search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input type="search" id="v-search-input" placeholder="タグを検索..." autocomplete="off" autocorrect="off">
+        <button class="v-search-clear hidden" id="v-search-clear">✕</button>
+      </div>
+      <div id="v-search-section" class="hidden">
+        <div class="section-label">検索結果</div>
+        <div id="v-search-results"></div>
+      </div>
+      <div id="v-random-section">
+        <div class="v-section-row">
+          <span class="section-label">復習タグ</span>
+          <button class="v-refresh-btn" id="v-refresh-btn" title="更新">↻</button>
+        </div>
+        <div id="v-random-cards"></div>
+      </div>
+    </main>
+
+    <!-- FAB -->
+    <button id="v-fab" aria-label="新規追加">＋</button>
+
+    <!-- Category tree screen -->
+    <div id="v-screen-categories" class="sub-screen">
+      <div class="sub-header">
+        <button class="sub-back-btn" id="v-cat-back-btn">‹</button>
+        <span class="sub-header-title">項目一覧</span>
+        <div style="width:44px"></div>
+      </div>
+      <div class="sub-body" id="v-cat-tree-body"></div>
+    </div>
+
+    <!-- Items list screen -->
+    <div id="v-screen-items" class="sub-screen">
+      <div class="sub-header">
+        <button class="sub-back-btn" id="v-items-back-btn">‹</button>
+        <span class="sub-header-title" id="v-items-title">項目</span>
+        <button class="sub-back-btn" id="v-add-item-btn" style="font-size:22px;color:var(--accent)">＋</button>
+      </div>
+      <div class="sub-body" id="v-items-body" style="padding-bottom:calc(80px + var(--safe-bottom))"></div>
+      <div id="v-items-delete-bar">
+        <button id="v-items-delete-btn">削除</button>
+      </div>
+    </div>
+
+    <!-- Detail screen -->
+    <div id="v-screen-detail" class="sub-screen">
+      <div class="sub-header">
+        <button class="sub-back-btn" id="v-detail-back-btn">‹</button>
+        <span class="sub-header-title">詳細</span>
+        <div style="width:44px"></div>
+      </div>
+      <div class="sub-body" id="v-detail-body"></div>
+    </div>
+
+    <!-- Edit screen -->
+    <div id="v-screen-edit" class="sub-screen">
+      <div class="sub-header">
+        <button class="sub-back-btn" id="v-edit-cancel-btn" style="font-size:14px;padding-inline:12px;width:auto">キャンセル</button>
+        <span class="sub-header-title" id="v-edit-screen-title">新規追加</span>
+        <button class="sub-back-btn" id="v-edit-save-btn" style="font-size:14px;padding-inline:12px;width:auto;color:var(--accent);font-weight:600">保存</button>
+      </div>
+      <div class="sub-body">
+        <div class="v-edit-wrap">
+          <div class="form-group">
+            <label class="form-label">カテゴリ</label>
+            <div class="v-cat-selects">
+              <div class="v-cat-level-wrap">
+                <span class="v-cat-level-label">Lv.1</span>
+                <select class="form-select" id="v-cat-sel-1"></select>
+              </div>
+              <div class="v-cat-level-wrap" id="v-cat-lv2-wrap" style="display:none">
+                <span class="v-cat-level-label">Lv.2</span>
+                <select class="form-select" id="v-cat-sel-2"></select>
+              </div>
+              <div class="v-cat-level-wrap" id="v-cat-lv3-wrap" style="display:none">
+                <span class="v-cat-level-label">Lv.3</span>
+                <select class="form-select" id="v-cat-sel-3"></select>
+              </div>
+              <div class="v-cat-level-wrap" id="v-cat-lv4-wrap" style="display:none">
+                <span class="v-cat-level-label">Lv.4</span>
+                <select class="form-select" id="v-cat-sel-4"></select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-name">メインタグ *</label>
+            <input class="form-input" id="v-edit-name" type="text" placeholder="例: BUN, CKD, 代謝性アシドーシス" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-definition">定義</label>
+            <textarea class="form-textarea" id="v-edit-definition" placeholder="定義・概念を入力"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-normal">正常値</label>
+            <textarea class="form-textarea" id="v-edit-normal" placeholder="基準値・参照範囲"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-clinical">臨床的意義</label>
+            <textarea class="form-textarea" id="v-edit-clinical" placeholder="臨床的意義・解釈"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-diseases">関連疾患</label>
+            <textarea class="form-textarea" id="v-edit-diseases" placeholder="関連する疾患・病態"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="v-edit-notes">備考</label>
+            <textarea class="form-textarea" id="v-edit-notes" placeholder="その他のメモ"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">画像添付</label>
+            <div class="v-attach-list" id="v-attach-preview-list"></div>
+            <button type="button" class="v-attach-add-label" id="v-attach-add-btn">📷 画像を追加</button>
+            <input type="file" id="v-attach-input" accept="image/*" multiple style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
+          </div>
+          <div class="form-group">
+            <label class="form-label">関連タグ</label>
+            <div class="v-related-edit-wrap">
+              <div class="v-related-chips" id="v-related-chips"></div>
+              <input class="form-input" id="v-related-search" type="text" placeholder="タグ名で検索して追加..." autocomplete="off">
+              <div class="v-related-dropdown" id="v-related-dropdown"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings screen -->
+    <div id="v-screen-settings" class="sub-screen">
+      <div class="sub-header">
+        <button class="sub-back-btn" id="v-settings-back-btn">‹</button>
+        <span class="sub-header-title">設定・インポート</span>
+        <div style="width:44px"></div>
+      </div>
+      <div class="sub-body">
+        <div class="v-edit-wrap">
+          <div class="v-settings-card">
+            <div class="v-settings-card-title">データ統計</div>
+            <div id="v-data-stats"></div>
+          </div>
+          <div class="v-settings-card">
+            <div class="v-settings-card-title">データ同期</div>
+            <div class="settings-toggle-row" style="margin-bottom:12px">
+              <div>
+                <div class="settings-toggle-label">Googleドライブ連携</div>
+                <div class="settings-toggle-sub">vetlearn_data.jsonを自動同期</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="v-setting-drive-toggle">
+                <div class="toggle-track"></div><div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div id="v-setting-drive-subrow" style="display:none">
+              <div id="v-drive-signin-area">
+                <button id="v-drive-sign-in-btn" class="perm-btn">Googleアカウントでログイン</button>
+              </div>
+              <div id="v-drive-account-area" style="display:none">
+                <div id="v-drive-account-status" style="font-size:13px;color:var(--sub);margin-bottom:8px;text-align:center"></div>
+                <button id="v-drive-sign-out-btn" class="perm-btn" style="background:var(--danger)">ログアウト</button>
+              </div>
+              <div id="v-drive-sync-status" style="margin-top:8px;font-size:12px;color:var(--sub);text-align:center;min-height:16px"></div>
+            </div>
+          </div>
+          <div class="v-settings-card">
+            <div class="v-settings-card-title">JSONインポート</div>
+            <button class="v-settings-btn v-settings-btn-primary" id="v-import-file-btn">📂 JSONファイルを選択してインポート</button>
+            <input type="file" id="v-file-import-input" accept=".json" style="display:none">
+            <p class="v-settings-hint">vetlearn_data.jsonを選択するとデータを読み込みます。既存の習熟度・信頼度・SM-2データは保持されます。</p>
+          </div>
+          <div class="v-settings-card">
+            <div class="v-settings-card-title">JSONエクスポート</div>
+            <button class="v-settings-btn v-settings-btn-success" id="v-export-btn">⬆️ JSONをダウンロード</button>
+            <p class="v-settings-hint">現在のデータをvetlearn_data.jsonとしてダウンロードします。</p>
+          </div>
+          <div class="v-settings-card">
+            <div class="v-settings-card-title">危険な操作</div>
+            <button class="v-settings-btn v-settings-btn-danger" id="v-reset-btn">ローカルデータをすべて削除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="v-toast"></div>
+
+    <!-- Image popup -->
+    <div id="v-img-popup">
+      <button id="v-img-popup-close" aria-label="閉じる">×</button>
+      <div id="v-img-popup-inner">
+        <img id="v-img-popup-img" alt="">
+      </div>
+    </div>
+
+    <!-- Confirm dialog -->
+    <div id="v-confirm-overlay">
+      <div id="v-confirm-box">
+        <div class="v-confirm-body">
+          <h3 id="v-confirm-title">削除しますか？</h3>
+          <p id="v-confirm-msg"></p>
+        </div>
+        <div class="v-confirm-actions">
+          <button class="v-confirm-btn v-confirm-cancel" id="v-confirm-cancel">キャンセル</button>
+          <button class="v-confirm-btn v-confirm-ok" id="v-confirm-ok">削除</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #screen-vetlearn -->
+
+
+  <script>
+  'use strict';
+
+  // ════════════════════════════════════════════════════════════
+  // SHARED UTILITY
+  // ════════════════════════════════════════════════════════════
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // NAVIGATION — 1-second long press to switch screens
+  // ════════════════════════════════════════════════════════════
+  const NAV_LONG_PRESS_MS = 1000;
+  let currentScreen = 'dashboard';
+  let navPressRaf = null, navPressStart = null, navProgressEl = null, navPressTarget = null;
+
+  function switchScreen(to) {
+    if (to === currentScreen) return;
+    document.querySelector('.app-screen.active')?.classList.remove('active');
+    document.getElementById('screen-' + to).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === to));
+    currentScreen = to;
+    if (to === 'dashboard') renderDashboard();
+    if (to === 'vetlearn') { vRefreshCats(); vLoadRandomCards(); }
+  }
+
+  function cancelNavPress() {
+    if (navPressRaf) { cancelAnimationFrame(navPressRaf); navPressRaf = null; }
+    navPressStart = null; navPressTarget = null;
+    if (navProgressEl) { navProgressEl.style.width = '0%'; navProgressEl = null; }
+  }
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    const pEl = btn.querySelector('.nav-progress');
+    const tgt = btn.dataset.screen;
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (tgt === currentScreen) return;
+      cancelNavPress();
+      navPressTarget = tgt; navProgressEl = pEl; navPressStart = performance.now();
+      pEl.style.transition = 'none'; pEl.style.width = '0%';
+      function tick(now) {
+        const pct = Math.min((now - navPressStart) / NAV_LONG_PRESS_MS * 100, 100);
+        pEl.style.width = pct + '%';
+        if (pct >= 100) { cancelNavPress(); switchScreen(tgt); return; }
+        navPressRaf = requestAnimationFrame(tick);
+      }
+      navPressRaf = requestAnimationFrame(tick);
+    });
+    btn.addEventListener('pointerup',     cancelNavPress);
+    btn.addEventListener('pointerleave',  cancelNavPress);
+    btn.addEventListener('pointercancel', cancelNavPress);
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: CONSTANTS
+  // ════════════════════════════════════════════════════════════
+  const GDRIVE_CLIENT_ID   = '495529323787-74hfjtbva20vvj312f94g5dh4e5rgags.apps.googleusercontent.com';
+  const T_STORAGE_KEY      = 'taskpwa_tasks';
+  const T_SETTINGS_KEY     = 'taskpwa_settings';
+  const T_LONG_PRESS_MS    = 2000;
+  const T_GDRIVE_FILE      = 'tasks.json';
+  const T_GDRIVE_TOKEN_KEY  = 'taskpwa_gdrive_token';
+  const T_GDRIVE_FILEID_KEY = 'taskpwa_gdrive_fileid';
+  const T_GDRIVE_AUTHED_KEY = 'taskpwa_gdrive_authed';
+  const DEADLINE_LABEL = { asap:'ASAP', today:'今日中', fri:'今週中(金)', sun:'今週中(日)', datetime:'日時指定', none:'なし' };
+  const NOTIFY_LABEL   = { 6:'6h', 12:'12h', 24:'24h', 48:'48h', 72:'72h', 168:'1w' };
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: STORAGE
+  // ════════════════════════════════════════════════════════════
+  function loadTasks() {
+    try { return JSON.parse(localStorage.getItem(T_STORAGE_KEY)) || []; } catch { return []; }
+  }
+  function saveTasksLocal(t) { localStorage.setItem(T_STORAGE_KEY, JSON.stringify(t)); }
+  function saveTasks(t) { saveTasksLocal(t); TaskSync.scheduleSyncToCloud(); }
+  function addTask(data) {
+    const t = loadTasks();
+    t.push({ id: Date.now(), ...data, done: false, createdAt: new Date().toISOString() });
+    saveTasks(t);
+  }
+  function updateTask(id, data) {
+    const t = loadTasks(), idx = t.findIndex(x => x.id === id); if (idx === -1) return;
+    const kept = { id: t[idx].id, done: t[idx].done, createdAt: t[idx].createdAt };
+    t[idx] = { ...kept, ...data }; saveTasks(t);
+  }
+  function completeTask(id) {
+    const t = loadTasks(), idx = t.findIndex(x => x.id === id); if (idx === -1) return;
+    if (t[idx].protect) { t[idx].done = true; t[idx].doneAt = new Date().toISOString(); }
+    else t.splice(idx, 1);
+    saveTasks(t); renderTasks();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: SETTINGS
+  // ════════════════════════════════════════════════════════════
+  function tLoadSettings() {
+    try { return JSON.parse(localStorage.getItem(T_SETTINGS_KEY)) || {}; } catch { return {}; }
+  }
+  function tSaveSettings(s) { localStorage.setItem(T_SETTINGS_KEY, JSON.stringify(s)); }
+  function tGetSettings() { return { notifyEnabled: false, notifyInterval: 60, driveEnabled: false, ...tLoadSettings() }; }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: DATE HELPERS
+  // ════════════════════════════════════════════════════════════
+  const p2 = n => String(n).padStart(2,'0');
+  function fmtDt(iso) {
+    if (!iso) return ''; const d = new Date(iso);
+    return `${d.getFullYear()}/${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  }
+  function isoToLocal(iso) {
+    if (!iso) return ''; const d = new Date(iso);
+    return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  }
+  function resolveDeadline(type, customDt) {
+    const now = new Date();
+    if (type === 'asap' || type === 'none') return null;
+    if (type === 'today') { const d = new Date(now); d.setHours(23,59,0,0); return d.toISOString(); }
+    if (type === 'fri') {
+      const d = new Date(now), diff = (5 - d.getDay() + 7) % 7 || 7;
+      d.setDate(d.getDate() + diff); d.setHours(23,59,0,0); return d.toISOString();
+    }
+    if (type === 'sun') {
+      const d = new Date(now), diff = (7 - d.getDay()) % 7 || 7;
+      d.setDate(d.getDate() + diff); d.setHours(23,59,0,0); return d.toISOString();
+    }
+    if (type === 'datetime') return customDt ? new Date(customDt).toISOString() : null;
+    return null;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: RENDER
+  // ════════════════════════════════════════════════════════════
+  function isPriority(task) {
+    if (task.done) return false;
+    if (task.deadlineType === 'asap') return true;
+    if (!task.deadlineIso) return false;
+    return (new Date(task.deadlineIso) - Date.now()) <= task.notifyHours * 3600000;
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('t-priority-list');
+    list.innerHTML = '';
+    const priority = loadTasks().filter(isPriority);
+    if (!priority.length) {
+      list.innerHTML = '<div class="empty-state"><div class="emoji">✅</div><p>優先タスクはありません</p></div>';
+      return;
+    }
+    priority.forEach(t => list.appendChild(createCard(t)));
+  }
+
+  function addBadgeEl(container, cls, text) {
+    const b = document.createElement('span'); b.className = `badge ${cls}`; b.textContent = text;
+    container.appendChild(b);
+  }
+  function buildMeta(task, container, includeNote = true) {
+    if (task.done)                          addBadgeEl(container, 'badge-done', '完了');
+    if (task.deadlineType === 'asap')       addBadgeEl(container, 'badge-asap', 'ASAP');
+    else if (task.deadlineType === 'today') addBadgeEl(container, 'badge-today', '今日中');
+    else if (task.deadlineType === 'fri')   addBadgeEl(container, 'badge-week', '今週中(金)');
+    else if (task.deadlineType === 'sun')   addBadgeEl(container, 'badge-week', '今週中(日)');
+    else if (task.deadlineIso) {
+      const s = document.createElement('span'); s.textContent = `期限 ${fmtDt(task.deadlineIso)}`; container.appendChild(s);
+    }
+    if (task.protect) addBadgeEl(container, 'badge-lock', '🔒 保護');
+    if (task.startIso) {
+      const s = document.createElement('span'); s.textContent = `開始 ${fmtDt(task.startIso)}`; container.appendChild(s);
+    }
+    if (includeNote && task.note) {
+      const s = document.createElement('span'); s.textContent = task.note; container.appendChild(s);
+    }
+  }
+  function createCard(task) {
+    const div = document.createElement('div');
+    div.className = 'task-card'; div.dataset.id = task.id;
+    const title = document.createElement('div');
+    title.className = 'task-card-title'; title.textContent = task.title;
+    if (task.done) title.style.textDecoration = 'line-through';
+    const meta = document.createElement('div'); meta.className = 'task-card-meta';
+    buildMeta(task, meta);
+    div.appendChild(title); div.appendChild(meta);
+    div.addEventListener('click', () => tShowPopMenu(task.id, div));
+    return div;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: CHIP HELPER
+  // ════════════════════════════════════════════════════════════
+  function tInitChips(groupId, onChange) {
+    document.getElementById(groupId).querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.getElementById(groupId).querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected'); onChange(chip.dataset.val);
+      });
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: POP MENU
+  // ════════════════════════════════════════════════════════════
+  let tActivePopId = null, tLpRaf = null, tLpStart = null;
+  const tPopBackdrop = document.getElementById('t-pop-backdrop');
+  const tPopMenu     = document.getElementById('t-pop-menu');
+  const tPopDoneBtn  = document.getElementById('t-pop-done-btn');
+  const tPopDoneBar  = document.getElementById('t-pop-done-progress');
+  const tPopEditBtn  = document.getElementById('t-pop-edit-btn');
+
+  function tShowPopMenu(taskId, cardEl) {
+    tClosePopMenu(); tActivePopId = taskId; cardEl.classList.add('pop-active');
+    const rect = cardEl.getBoundingClientRect(), menuW = 210, menuH = 108, margin = 8;
+    let top = rect.bottom + margin;
+    if (top + menuH > window.innerHeight - 16) top = rect.top - menuH - margin;
+    let left = rect.left;
+    if (left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+    if (left < 8) left = 8;
+    tPopMenu.style.top = `${top}px`; tPopMenu.style.left = `${left}px`;
+    tPopMenu.style.transformOrigin = `${top < rect.top ? 'bottom' : 'top'} left`;
+    tPopBackdrop.classList.add('open'); tPopMenu.classList.add('open');
+  }
+  function tClosePopMenu() {
+    if (tActivePopId !== null) {
+      const card = document.querySelector(`.task-card[data-id="${tActivePopId}"]`);
+      if (card) card.classList.remove('pop-active');
+    }
+    tPopMenu.classList.remove('open'); tPopBackdrop.classList.remove('open');
+    tActivePopId = null; tCancelLongPress();
+  }
+  tPopBackdrop.addEventListener('click', tClosePopMenu);
+
+  function tStartLongPress() {
+    tCancelLongPress(); tLpStart = performance.now();
+    function tick(now) {
+      const pct = Math.min((now - tLpStart) / T_LONG_PRESS_MS * 100, 100);
+      tPopDoneBar.style.width = pct + '%';
+      if (pct >= 100) { const id = tActivePopId; tClosePopMenu(); completeTask(id); return; }
+      tLpRaf = requestAnimationFrame(tick);
+    }
+    tLpRaf = requestAnimationFrame(tick);
+  }
+  function tCancelLongPress() {
+    if (tLpRaf) { cancelAnimationFrame(tLpRaf); tLpRaf = null; }
+    tLpStart = null; tPopDoneBar.style.width = '0%';
+  }
+  tPopDoneBtn.addEventListener('pointerdown',  e => { e.preventDefault(); tStartLongPress(); });
+  tPopDoneBtn.addEventListener('pointerup',     tCancelLongPress);
+  tPopDoneBtn.addEventListener('pointerleave',  tCancelLongPress);
+  tPopDoneBtn.addEventListener('pointercancel', tCancelLongPress);
+  tPopEditBtn.addEventListener('click', () => { const id = tActivePopId; tClosePopMenu(); tOpenEditSheet(id); });
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: MANAGE SCREEN
+  // ════════════════════════════════════════════════════════════
+  let tManageOpen = false, tManageSortKey = 'deadline', tManageSortDir = 'asc';
+  let tManagePending = new Set(), tManageDone = new Set();
+  const tManageScreen = document.getElementById('t-manage-screen');
+
+  function tOpenManageScreen() {
+    tManagePending.clear(); tManageDone.clear();
+    tManageOpen = true; renderManageScreen(); tManageScreen.classList.add('open');
+  }
+  function tCloseManageScreen() { tManageScreen.classList.remove('open'); tManageOpen = false; }
+
+  function sortedTasks(tasks) {
+    return [...tasks].sort((a, b) => {
+      const aA = a.deadlineType === 'asap', bA = b.deadlineType === 'asap';
+      if (aA !== bA) return aA ? -1 : 1; if (aA && bA) return 0;
+      let va, vb;
+      if (tManageSortKey === 'deadline') {
+        va = a.deadlineIso ? new Date(a.deadlineIso).getTime() : null;
+        vb = b.deadlineIso ? new Date(b.deadlineIso).getTime() : null;
+      } else {
+        va = a.startIso ? new Date(a.startIso).getTime() : null;
+        vb = b.startIso ? new Date(b.startIso).getTime() : null;
+      }
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1; if (vb === null) return -1;
+      return tManageSortDir === 'asc' ? va - vb : vb - va;
+    });
+  }
+  function renderManageScreen() {
+    if (!tManageOpen) return;
+    const tasks = loadTasks();
+    const pending = sortedTasks(tasks.filter(t => !t.done));
+    const done    = sortedTasks(tasks.filter(t =>  t.done));
+    const pList = document.getElementById('t-manage-pending-list');
+    const dList = document.getElementById('t-manage-done-list');
+    const dSec  = document.getElementById('t-manage-done-section');
+    pList.innerHTML = '';
+    if (!pending.length) pList.innerHTML = '<div class="manage-empty">未完了タスクがありません</div>';
+    else pending.forEach(t => pList.appendChild(createManageRow(t, tManagePending)));
+    dList.innerHTML = '';
+    dSec.style.display = done.length ? 'block' : 'none';
+    done.forEach(t => dList.appendChild(createManageRow(t, tManageDone)));
+    updateManageDeleteBar();
+  }
+  function createManageRow(task, selSet) {
+    const row = document.createElement('div');
+    row.className = 'manage-row' + (selSet.has(task.id) ? ' checked' : '');
+    row.dataset.id = task.id;
+    const cbArea = document.createElement('div'); cbArea.className = 'manage-cb-area';
+    const cbIcon = document.createElement('div'); cbIcon.className = 'manage-cb-icon' + (selSet.has(task.id) ? ' on' : '');
+    cbArea.appendChild(cbIcon);
+    cbArea.addEventListener('click', e => {
+      e.stopPropagation();
+      const next = !selSet.has(task.id);
+      if (next) selSet.add(task.id); else selSet.delete(task.id);
+      cbIcon.classList.toggle('on', next); row.classList.toggle('checked', next);
+      updateManageDeleteBar();
+    });
+    const content = document.createElement('div'); content.className = 'manage-row-content';
+    const title = document.createElement('div'); title.className = 'manage-row-title';
+    title.textContent = task.title;
+    if (task.done) title.style.textDecoration = 'line-through';
+    const meta = document.createElement('div'); meta.className = 'manage-row-meta';
+    buildMeta(task, meta, false);
+    content.appendChild(title); content.appendChild(meta);
+    content.addEventListener('click', () => tOpenEditSheet(task.id));
+    row.appendChild(cbArea); row.appendChild(content);
+    return row;
+  }
+  function updateManageDeleteBar() {
+    const total = tManagePending.size + tManageDone.size;
+    const bar = document.getElementById('t-manage-delete-bar');
+    document.getElementById('t-manage-delete-btn').textContent = `${total}件を削除`;
+    bar.classList.toggle('visible', total > 0);
+  }
+  tInitChips('t-sort-key-chips', val => { tManageSortKey = val; renderManageScreen(); });
+  tInitChips('t-sort-dir-chips', val => { tManageSortDir = val; renderManageScreen(); });
+  document.getElementById('t-manage-back-btn').addEventListener('click', tCloseManageScreen);
+  document.getElementById('t-manage-delete-btn').addEventListener('click', () => {
+    const del = new Set([...tManagePending, ...tManageDone]);
+    if (!del.size) return;
+    saveTasks(loadTasks().filter(t => !del.has(t.id)));
+    tManagePending.clear(); tManageDone.clear();
+    renderManageScreen(); renderTasks();
+  });
+  document.getElementById('t-menu-manage').addEventListener('click', e => {
+    e.preventDefault(); tCloseDrawer(); tOpenManageScreen();
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: SETTINGS SCREEN
+  // ════════════════════════════════════════════════════════════
+  let tSettingsOpen = false;
+  const tSettingsScreen = document.getElementById('t-settings-screen');
+
+  function tOpenSettingsScreen() { tSettingsOpen = true; tSyncSettingsUI(); tSettingsScreen.classList.add('open'); }
+  function tCloseSettingsScreen() { tSettingsScreen.classList.remove('open'); tSettingsOpen = false; }
+
+  function tSyncSettingsUI() {
+    const s = tGetSettings();
+    document.getElementById('t-setting-notify-toggle').checked = s.notifyEnabled;
+    const show = s.notifyEnabled;
+    document.getElementById('t-setting-interval-row').style.display = show ? 'block' : 'none';
+    document.getElementById('t-setting-perm-row').style.display     = show ? 'block' : 'none';
+    document.querySelectorAll('#t-notify-interval-chips .chip').forEach(c =>
+      c.classList.toggle('selected', Number(c.dataset.val) === s.notifyInterval));
+    tUpdatePermStatusUI();
+    tUpdateDriveUI();
+  }
+  function tUpdatePermStatusUI() {
+    const el  = document.getElementById('t-setting-perm-status');
+    const btn = document.getElementById('t-setting-request-perm');
+    if (!('Notification' in window)) { el.textContent = 'このブラウザはバックグラウンド通知をサポートしていません'; btn.disabled = true; return; }
+    const perm = Notification.permission;
+    if (perm === 'granted')  { el.textContent = '✓ バックグラウンド通知が許可されています'; btn.disabled = true; }
+    else if (perm === 'denied') { el.textContent = '✗ 通知がブロックされています（端末の設定から変更してください）'; btn.disabled = true; }
+    else { el.textContent = '未許可 — タップして許可を求める'; btn.disabled = false; }
+  }
+  function tShowSyncIndicator(on) { document.getElementById('t-sync-indicator').classList.toggle('active', on); }
+  function tShowDriveSyncStatus(status) {
+    const el = document.getElementById('t-drive-sync-status'); if (!el) return;
+    const msg = { ok:'✓ 同期完了', error:'⚠ 同期エラー（次回再試行）', offline:'📶 オフライン中' };
+    el.textContent = msg[status] || '';
+  }
+  function tUpdateDriveUI() {
+    const s = tGetSettings();
+    const toggle = document.getElementById('t-setting-drive-toggle');
+    const subrow = document.getElementById('t-setting-drive-subrow');
+    if (!toggle || !subrow) return;
+    toggle.checked = s.driveEnabled;
+    subrow.style.display = s.driveEnabled ? 'block' : 'none';
+    if (!s.driveEnabled) return;
+    const authed = TaskSync.isAuthed();
+    document.getElementById('t-drive-signin-area').style.display  = authed ? 'none'  : 'block';
+    document.getElementById('t-drive-account-area').style.display = authed ? 'block' : 'none';
+    if (authed) document.getElementById('t-drive-account-status').textContent = '✓ Googleアカウント接続中';
+  }
+
+  document.getElementById('t-setting-notify-toggle').addEventListener('change', e => {
+    const s = tGetSettings(); s.notifyEnabled = e.target.checked; tSaveSettings(s);
+    tSyncSettingsUI();
+    if (s.notifyEnabled) { tStartNotifTimer(); tRequestWebNotifPermission(); }
+    else { tStopNotifTimer(); tHideBanner(); }
+  });
+  tInitChips('t-notify-interval-chips', val => {
+    const s = tGetSettings(); s.notifyInterval = Number(val); tSaveSettings(s);
+    if (s.notifyEnabled) tStartNotifTimer();
+  });
+  document.getElementById('t-setting-request-perm').addEventListener('click', () => tRequestWebNotifPermission());
+  document.getElementById('t-settings-back-btn').addEventListener('click', tCloseSettingsScreen);
+  document.getElementById('t-menu-settings').addEventListener('click', e => {
+    e.preventDefault(); tCloseDrawer(); tOpenSettingsScreen();
+  });
+  async function tRequestWebNotifPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') await Notification.requestPermission();
+    tUpdatePermStatusUI();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: NOTIFICATIONS
+  // ════════════════════════════════════════════════════════════
+  let tAudioCtx = null;
+  document.addEventListener('pointerdown', () => {
+    if (!tAudioCtx) { try { tAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
+    if (tAudioCtx && tAudioCtx.state === 'suspended') tAudioCtx.resume();
+  }, { passive: true });
+
+  function tPlayNotifSound() {
+    if (!tAudioCtx) return;
+    if (tAudioCtx.state === 'suspended') tAudioCtx.resume();
+    try {
+      const ctx = tAudioCtx, now = ctx.currentTime;
+      function tone(freq, startOff, dur, vol) {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, now + startOff);
+        gain.gain.linearRampToValueAtTime(vol, now + startOff + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + startOff + dur);
+        osc.start(now + startOff); osc.stop(now + startOff + dur + 0.05);
+      }
+      tone(1046.5, 0, 0.75, 0.22); tone(1318.5, 0, 0.40, 0.09);
+      tone(784.0, 0.32, 0.85, 0.22); tone(987.77, 0.32, 0.45, 0.09);
+    } catch {}
+  }
+
+  let tNotifTimerId = null;
+  function tStartNotifTimer() {
+    tStopNotifTimer();
+    const s = tGetSettings(); if (!s.notifyEnabled) return;
+    tCheckAndNotify();
+    tNotifTimerId = setInterval(tCheckAndNotify, s.notifyInterval * 60000);
+  }
+  function tStopNotifTimer() { if (tNotifTimerId) { clearInterval(tNotifTimerId); tNotifTimerId = null; } }
+  function tCheckAndNotify() {
+    const s = tGetSettings(); if (!s.notifyEnabled) return;
+    const pending = loadTasks().filter(t => !t.done);
+    if (!pending.length) { tHideBanner(); return; }
+    if (document.hidden) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('タスク管理', { body: `${pending.length}件の未完了タスクがあります`, tag: 'taskpwa-pending' });
+      }
+    } else { tShowBanner(pending.length); tPlayNotifSound(); }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    const s = tGetSettings(); if (!s.notifyEnabled) return;
+    const pending = loadTasks().filter(t => !t.done);
+    if (pending.length) tShowBanner(pending.length); else tHideBanner();
+  });
+
+  function tShowBanner(count) {
+    document.getElementById('t-notif-banner-text').textContent = `${count}件の未完了タスクがあります`;
+    document.getElementById('t-notif-banner').classList.add('show');
+  }
+  function tHideBanner() { document.getElementById('t-notif-banner').classList.remove('show'); }
+  document.getElementById('t-notif-banner-check').addEventListener('click', () => {
+    tHideBanner(); tCloseManageScreen(); tCloseSettingsScreen();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('t-notif-banner-close').addEventListener('click', tHideBanner);
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: FORM STATE
+  // ════════════════════════════════════════════════════════════
+  let tSelectedDeadline = 'asap', tSelectedNotify = 24;
+
+  tInitChips('t-deadline-chips', val => {
+    tSelectedDeadline = val;
+    const wrap = document.getElementById('t-deadline-datetime-wrap');
+    if (val === 'datetime') wrap.classList.add('visible');
+    else { wrap.classList.remove('visible'); document.getElementById('t-task-deadline-dt').value = ''; }
+  });
+  tInitChips('t-notify-chips', val => { tSelectedNotify = Number(val); });
+
+  function tResetForm() {
+    document.getElementById('t-task-form').reset();
+    document.querySelectorAll('#t-deadline-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.val === 'asap'));
+    document.querySelectorAll('#t-notify-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.val === '24'));
+    tSelectedDeadline = 'asap'; tSelectedNotify = 24;
+    document.getElementById('t-deadline-datetime-wrap').classList.remove('visible');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: DRAWER
+  // ════════════════════════════════════════════════════════════
+  const tDrawer = document.getElementById('t-drawer');
+  const tDrawerOverlay = document.getElementById('t-drawer-overlay');
+  function tOpenDrawer()  { tDrawer.classList.add('open'); tDrawerOverlay.classList.add('open'); }
+  function tCloseDrawer() { tDrawer.classList.remove('open'); tDrawerOverlay.classList.remove('open'); }
+  document.getElementById('t-hamburger-btn').addEventListener('click', tOpenDrawer);
+  tDrawerOverlay.addEventListener('click', tCloseDrawer);
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: SHEET
+  // ════════════════════════════════════════════════════════════
+  const tSheet = document.getElementById('t-sheet');
+  const tSheetOverlay = document.getElementById('t-sheet-overlay');
+  let tEditingTaskId = null;
+
+  function tOpenSheet() {
+    tSheet.classList.add('open'); tSheetOverlay.classList.add('open');
+    setTimeout(() => document.getElementById('t-task-title').focus(), 350);
+  }
+  function tCloseSheet() {
+    tSheet.classList.remove('open'); tSheetOverlay.classList.remove('open');
+    tEditingTaskId = null;
+    document.getElementById('t-sheet-title').textContent     = 'タスクを追加';
+    document.getElementById('t-form-submit-btn').textContent  = '追加する';
+    tResetForm();
+    if (tManageOpen) renderManageScreen();
+  }
+  document.getElementById('t-fab').addEventListener('click', tOpenSheet);
+  document.getElementById('t-sheet-close-btn').addEventListener('click', tCloseSheet);
+  tSheetOverlay.addEventListener('click', tCloseSheet);
+
+  function tOpenEditSheet(taskId) {
+    const task = loadTasks().find(t => t.id === taskId); if (!task) return;
+    tEditingTaskId = taskId;
+    document.getElementById('t-task-title').value     = task.title || '';
+    document.getElementById('t-task-start').value     = task.startIso ? isoToLocal(task.startIso) : '';
+    document.getElementById('t-task-protect').checked = !!task.protect;
+    document.getElementById('t-task-note').value      = task.note || '';
+    tSelectedDeadline = task.deadlineType || 'none';
+    document.querySelectorAll('#t-deadline-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.val === tSelectedDeadline));
+    const dtWrap = document.getElementById('t-deadline-datetime-wrap');
+    if (tSelectedDeadline === 'datetime') {
+      dtWrap.classList.add('visible');
+      document.getElementById('t-task-deadline-dt').value = task.deadlineIso ? isoToLocal(task.deadlineIso) : '';
+    } else { dtWrap.classList.remove('visible'); document.getElementById('t-task-deadline-dt').value = ''; }
+    tSelectedNotify = task.notifyHours || 24;
+    document.querySelectorAll('#t-notify-chips .chip').forEach(c => c.classList.toggle('selected', Number(c.dataset.val) === tSelectedNotify));
+    document.getElementById('t-sheet-title').textContent    = 'タスクを編集';
+    document.getElementById('t-form-submit-btn').textContent = '保存する';
+    tOpenSheet();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: CONFIRM DIALOG
+  // ════════════════════════════════════════════════════════════
+  const tConfirmOverlay = document.getElementById('t-confirm-overlay');
+  let tPendingTask = null;
+
+  function tShowConfirm(task) {
+    tPendingTask = task;
+    const isEdit = tEditingTaskId !== null;
+    document.getElementById('t-confirm-heading').textContent = isEdit ? 'タスクを更新しますか？' : 'タスクを追加しますか？';
+    document.getElementById('t-confirm-ok').textContent      = isEdit ? '更新' : '追加';
+    document.getElementById('t-confirm-preview').textContent = task.title;
+    const parts = [];
+    if (task.deadlineType && task.deadlineType !== 'none') parts.push(`期限：${DEADLINE_LABEL[task.deadlineType]}`);
+    if (task.deadlineIso && task.deadlineType === 'datetime') parts.push(`日時：${fmtDt(task.deadlineIso)}`);
+    if (task.startIso)  parts.push(`開始：${fmtDt(task.startIso)}`);
+    if (task.protect)   parts.push('保護：ON');
+    parts.push(`通知優先：${NOTIFY_LABEL[task.notifyHours]}`);
+    document.getElementById('t-confirm-detail').textContent = parts.join('　');
+    tConfirmOverlay.classList.add('open');
+  }
+  function tHideConfirm() { tConfirmOverlay.classList.remove('open'); tPendingTask = null; }
+  document.getElementById('t-confirm-cancel').addEventListener('click', tHideConfirm);
+  document.getElementById('t-confirm-ok').addEventListener('click', () => {
+    if (tPendingTask) {
+      if (tEditingTaskId !== null) updateTask(tEditingTaskId, tPendingTask); else addTask(tPendingTask);
+      renderTasks();
+    }
+    tHideConfirm(); tCloseSheet();
+  });
+
+  document.getElementById('t-task-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const title = document.getElementById('t-task-title').value.trim();
+    if (!title) { document.getElementById('t-task-title').focus(); return; }
+    const startVal = document.getElementById('t-task-start').value;
+    const dtVal    = document.getElementById('t-task-deadline-dt').value;
+    tShowConfirm({
+      title,
+      startIso:     startVal ? new Date(startVal).toISOString() : null,
+      deadlineType: tSelectedDeadline,
+      deadlineIso:  resolveDeadline(tSelectedDeadline, dtVal),
+      protect:      document.getElementById('t-task-protect').checked,
+      notifyHours:  tSelectedNotify,
+      note:         document.getElementById('t-task-note').value.trim(),
+    });
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: GOOGLE DRIVE SYNC (TaskSync)
+  // ════════════════════════════════════════════════════════════
+  const TaskSync = (() => {
+    let tokenClient = null, accessToken = null, tokenExpiry = 0;
+    let cachedFileId = null, syncing = false, pendingUpload = false;
+    let silentRenewalPending = false;
+
+    function loadStored() {
+      try {
+        const d = JSON.parse(localStorage.getItem(T_GDRIVE_TOKEN_KEY) || 'null');
+        if (d && d.t && d.e > Date.now()) { accessToken = d.t; tokenExpiry = d.e; }
+      } catch {}
+      cachedFileId = localStorage.getItem(T_GDRIVE_FILEID_KEY) || null;
+    }
+    function storeToken(tok, expiresIn) {
+      accessToken = tok; tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
+      localStorage.setItem(T_GDRIVE_TOKEN_KEY, JSON.stringify({ t: accessToken, e: tokenExpiry }));
+      localStorage.setItem(T_GDRIVE_AUTHED_KEY, '1');
+    }
+    function clearAuth() {
+      accessToken = null; tokenExpiry = 0; cachedFileId = null;
+      localStorage.removeItem(T_GDRIVE_TOKEN_KEY);
+      localStorage.removeItem(T_GDRIVE_FILEID_KEY);
+      localStorage.removeItem(T_GDRIVE_AUTHED_KEY);
+    }
+    function isAuthed() { return !!accessToken && Date.now() < tokenExpiry; }
+
+    function initGIS() {
+      if (!GDRIVE_CLIENT_ID || typeof google === 'undefined' || tokenClient) return;
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GDRIVE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: () => {},
+      });
+    }
+    function requestToken(prompt) {
+      return new Promise((resolve, reject) => {
+        initGIS();
+        if (!tokenClient) { reject(new Error('GIS not ready')); return; }
+        const timer = prompt === '' ? setTimeout(() => reject(new Error('timeout')), 15000) : null;
+        tokenClient.callback = r => {
+          if (timer) clearTimeout(timer);
+          if (r.error) { reject(new Error(r.error)); return; }
+          storeToken(r.access_token, r.expires_in); resolve(r.access_token);
+        };
+        tokenClient.requestAccessToken({ prompt: prompt || '' });
+      });
+    }
+    async function getToken() {
+      if (isAuthed()) return accessToken;
+      return requestToken('');
+    }
+    async function tryAutoLogin() {
+      if (isAuthed()) return true;
+      if (!navigator.onLine) return false;
+      try { await requestToken(''); return true; }
+      catch (e) { if (e.message === 'access_denied') clearAuth(); return false; }
+    }
+
+    async function findFileId(token) {
+      if (cachedFileId) return cachedFileId;
+      const q = encodeURIComponent(`name='${T_GDRIVE_FILE}' and trashed=false`);
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&spaces=drive`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error('search_failed');
+      const { files } = await r.json();
+      if (files && files.length > 0) { cachedFileId = files[0].id; localStorage.setItem(T_GDRIVE_FILEID_KEY, cachedFileId); }
+      return cachedFileId;
+    }
+    async function upload(tasks) {
+      const token = await getToken(), id = await findFileId(token);
+      const body  = JSON.stringify(tasks, null, 2);
+      if (id) {
+        const r = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`,
+          { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body });
+        if (!r.ok) { cachedFileId = null; localStorage.removeItem(T_GDRIVE_FILEID_KEY); throw new Error('upload_failed'); }
+      } else {
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify({ name: T_GDRIVE_FILE, mimeType: 'application/json' })], { type: 'application/json' }));
+        form.append('media', new Blob([body], { type: 'application/json' }));
+        const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+          { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+        if (!r.ok) throw new Error('create_failed');
+        const { id: newId } = await r.json();
+        cachedFileId = newId; localStorage.setItem(T_GDRIVE_FILEID_KEY, newId);
+      }
+    }
+    async function download() {
+      const token = await getToken(), id = await findFileId(token);
+      if (!id) return null;
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error('download_failed');
+      return r.json();
+    }
+
+    async function scheduleSyncToCloud() {
+      const s = tGetSettings();
+      if (!s.driveEnabled) return;
+      if (!isAuthed()) {
+        pendingUpload = true;
+        if (!silentRenewalPending) {
+          silentRenewalPending = true;
+          tryAutoLogin().then(ok => {
+            silentRenewalPending = false; tUpdateDriveUI();
+            if (ok && pendingUpload) scheduleSyncToCloud();
+          });
+        }
+        return;
+      }
+      if (!navigator.onLine) { pendingUpload = true; tShowDriveSyncStatus('offline'); return; }
+      if (syncing) { pendingUpload = true; return; }
+      syncing = true; tShowSyncIndicator(true);
+      let ok = false;
+      try {
+        await upload(loadTasks()); pendingUpload = false; tShowDriveSyncStatus('ok'); ok = true;
+      } catch { pendingUpload = true; tShowDriveSyncStatus('error'); }
+      finally {
+        syncing = false; tShowSyncIndicator(false);
+        if (ok && pendingUpload) scheduleSyncToCloud();
+      }
+    }
+    async function syncFromCloud() {
+      const s = tGetSettings();
+      if (!s.driveEnabled || !isAuthed() || !navigator.onLine) return;
+      tShowSyncIndicator(true);
+      try {
+        const data = await download();
+        if (Array.isArray(data)) {
+          saveTasksLocal(data); renderTasks();
+          if (tManageOpen) renderManageScreen();
+          tShowDriveSyncStatus('ok');
+        } else { await upload(loadTasks()); tShowDriveSyncStatus('ok'); }
+      } catch { tShowDriveSyncStatus('error'); }
+      finally { tShowSyncIndicator(false); }
+    }
+
+    async function signIn() {
+      try {
+        await requestToken('select_account'); tUpdateDriveUI();
+        await syncFromCloud();
+        if (pendingUpload) await scheduleSyncToCloud();
+      } catch { tUpdateDriveUI(); }
+    }
+    function signOut() {
+      if (accessToken && typeof google !== 'undefined') {
+        try { google.accounts.oauth2.revoke(accessToken, () => {}); } catch {}
+      }
+      clearAuth(); tUpdateDriveUI(); tShowDriveSyncStatus('');
+    }
+
+    async function onGISLoad() {
+      initGIS();
+      const ok = await tryAutoLogin();
+      if (ok) {
+        const s = tGetSettings(); s.driveEnabled = true; tSaveSettings(s);
+        tUpdateDriveUI();
+        if (navigator.onLine) {
+          await syncFromCloud();
+          if (pendingUpload) await scheduleSyncToCloud();
+        }
+      } else {
+        tUpdateDriveUI();
+        showDriveLoginPopup();
+      }
+    }
+
+    function init() { loadStored(); initGIS(); }
+
+    return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud };
+  })();
+
+  // Drive settings handlers
+  document.getElementById('t-setting-drive-toggle').addEventListener('change', async e => {
+    const s = tGetSettings(); s.driveEnabled = e.target.checked; tSaveSettings(s);
+    tUpdateDriveUI();
+    if (s.driveEnabled) {
+      if (!TaskSync.isAuthed()) await TaskSync.signIn();
+      else await TaskSync.syncFromCloud();
+    }
+  });
+  document.getElementById('t-drive-sign-in-btn').addEventListener('click',  () => TaskSync.signIn());
+  document.getElementById('t-drive-sign-out-btn').addEventListener('click', () => TaskSync.signOut());
+
+  // ════════════════════════════════════════════════════════════
+  // TASKS: PULL-TO-REFRESH
+  // ════════════════════════════════════════════════════════════
+  const PTR_HEIGHT = 56, PTR_THRESHOLD = 72;
+  let ptrStartY = 0, ptrDeltaY = 0, ptrTracking = false, ptrLoading = false;
+  const tPtrWrap = document.getElementById('t-ptr-wrap');
+
+  function ptrSetY(py) { tPtrWrap.style.transform = `translateY(${py}px)`; }
+  function ptrSnapBack() {
+    tPtrWrap.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+    ptrSetY(-PTR_HEIGHT); tPtrWrap.classList.remove('ptr-ready','ptr-loading');
+  }
+
+  document.addEventListener('touchstart', e => {
+    if (currentScreen !== 'tasks') return;
+    if (ptrLoading) return;
+    if (document.getElementById('t-manage-screen').classList.contains('open'))   return;
+    if (document.getElementById('t-settings-screen').classList.contains('open')) return;
+    if (document.getElementById('t-sheet').classList.contains('open'))           return;
+    const scrollTop = (document.scrollingElement || document.documentElement).scrollTop;
+    if (scrollTop > 2) return;
+    ptrStartY = e.touches[0].clientY; ptrDeltaY = 0; ptrTracking = true;
+    tPtrWrap.style.transition = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (currentScreen !== 'tasks' || !ptrTracking || ptrLoading) return;
+    const dy = e.touches[0].clientY - ptrStartY;
+    if (dy <= 0) { ptrTracking = false; return; }
+    const scrollTop = (document.scrollingElement || document.documentElement).scrollTop;
+    if (scrollTop > 2) { ptrTracking = false; return; }
+    e.preventDefault();
+    ptrDeltaY = dy;
+    const eff = dy <= PTR_HEIGHT ? dy : PTR_HEIGHT + (dy - PTR_HEIGHT) * 0.3;
+    ptrSetY(Math.min(eff - PTR_HEIGHT, 0));
+    tPtrWrap.classList.toggle('ptr-ready', dy >= PTR_THRESHOLD);
+  }, { passive: false });
+
+  async function ptrRelease() {
+    if (!ptrTracking) return;
+    ptrTracking = false;
+    const dy = ptrDeltaY; ptrDeltaY = 0;
+    if (dy >= PTR_THRESHOLD) {
+      ptrLoading = true;
+      tPtrWrap.classList.remove('ptr-ready'); tPtrWrap.classList.add('ptr-loading');
+      tPtrWrap.style.transition = 'transform 0.15s ease'; ptrSetY(0);
+      const s = tGetSettings();
+      if (s.driveEnabled && TaskSync.isAuthed() && navigator.onLine) await TaskSync.syncFromCloud();
+      else renderTasks();
+      await new Promise(r => setTimeout(r, 400));
+      ptrLoading = false; ptrSnapBack();
+    } else { ptrSnapBack(); }
+  }
+  document.addEventListener('touchend',    () => { if (currentScreen === 'tasks') ptrRelease(); }, { passive: true });
+  document.addEventListener('touchcancel', () => {
+    if (!ptrTracking) return; ptrTracking = false; ptrDeltaY = 0; ptrSnapBack();
+  }, { passive: true });
+
+  // ════════════════════════════════════════════════════════════
+  // DASHBOARD — date + real task data
+  // ════════════════════════════════════════════════════════════
+  const DB_DAYS = ['日','月','火','水','木','金','土'];
+
+  function renderDashboard() {
+    const now = new Date();
+    document.getElementById('db-date').textContent =
+      `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+    document.getElementById('db-weekday').textContent = `（${DB_DAYS[now.getDay()]}）`;
+    renderDashboardTasks();
+    renderDashboardReviews();
+  }
+
+  function renderDashboardTasks() {
+    const el = document.getElementById('db-tasks');
+    const priorities = loadTasks().filter(isPriority);
+    el.innerHTML = '';
+    if (!priorities.length) {
+      el.innerHTML = '<div class="db-empty">本日の優先タスクはありません ✅</div>'; return;
+    }
+    priorities.slice(0, 8).forEach(t => {
+      const card = document.createElement('div'); card.className = 'db-card';
+      let badgeCls = 'badge-week', badgeText = '';
+      if (t.deadlineType === 'asap')       { badgeCls = 'badge-asap';  badgeText = 'ASAP'; }
+      else if (t.deadlineType === 'today') { badgeCls = 'badge-today'; badgeText = '今日中'; }
+      else if (t.deadlineType === 'fri')   { badgeCls = 'badge-week';  badgeText = '今週中(金)'; }
+      else if (t.deadlineType === 'sun')   { badgeCls = 'badge-week';  badgeText = '今週中(日)'; }
+      else if (t.deadlineIso)              { badgeCls = 'badge-week';  badgeText = fmtDt(t.deadlineIso); }
+      const badge = badgeText ? `<span class="badge ${badgeCls}">${esc(badgeText)}</span>` : '';
+      const note  = t.note ? `<span style="color:var(--sub)">${esc(t.note.slice(0,30))}${t.note.length>30?'…':''}</span>` : '';
+      card.innerHTML = `
+        <div class="db-card-row">
+          <div class="db-card-title">${esc(t.title)}</div>
+          ${badge}
+        </div>
+        ${note ? `<div class="db-card-sub">${note}</div>` : ''}`;
+      card.addEventListener('click', () => {
+        switchScreen('tasks');
+        requestAnimationFrame(() => {
+          const taskCard = document.querySelector(`.task-card[data-id="${t.id}"]`);
+          if (taskCard) { taskCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => tShowPopMenu(t.id, taskCard), 120); }
+        });
+      });
+      el.appendChild(card);
+    });
+    if (priorities.length > 8) {
+      const more = document.createElement('div'); more.className = 'db-empty';
+      more.textContent = `他 ${priorities.length - 8} 件...`;
+      el.appendChild(more);
+    }
+  }
+
+  function vDbGetTodayReviews() {
+    const data = vGetData();
+    const today = new Date().toISOString().slice(0, 10);
+    return data.items
+      .filter(i => { const d = i.next_review_date || i.next_review; return d && d <= today; })
+      .sort((a, b) => (a.next_review_date||a.next_review||'').localeCompare(b.next_review_date||b.next_review||''))
+      .map(vNormalizeItem);
+  }
+
+  function renderDashboardReviews() {
+    const el = document.getElementById('db-reviews');
+    const items = vDbGetTodayReviews();
+    el.innerHTML = '';
+    if (!items.length) { el.innerHTML = '<div class="db-empty">本日の復習項目はありません ✅</div>'; return; }
+    items.slice(0, 10).forEach(item => {
+      const card = document.createElement('div'); card.className = 'db-card';
+      let starsHtml = '';
+      for (let i = 1; i <= 5; i++) starsHtml += `<span class="db-card-star${i <= item.proficiency ? ' on' : ''}">★</span>`;
+      const crumb = vMakeCrumb(item) || '未分類';
+      const od = vIsOverdue(item.next_review_date);
+      card.innerHTML = `
+        <div class="db-card-row">
+          <div class="db-card-title">${esc(item.name)}</div>
+          <div class="db-card-stars">${starsHtml}</div>
+        </div>
+        <div class="db-card-sub">
+          ${esc(crumb)}
+          ${od ? '<span class="v-overdue-badge">期限超過</span>' : ''}
+        </div>`;
+      card.addEventListener('click', () => { switchScreen('vetlearn'); vOpenDetail(item.id); });
+      el.appendChild(card);
+    });
+    if (items.length > 10) {
+      const more = document.createElement('div'); more.className = 'db-empty';
+      more.textContent = `他 ${items.length - 10} 件...`;
+      el.appendChild(more);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // VETLEARN — Storage & SM-2
+  // ════════════════════════════════════════════════════════════
+  const V_STORAGE_KEY      = 'vetlearn_data';
+  const V_GDRIVE_CLIENT_ID  = '495529323787-74hfjtbva20vvj312f94g5dh4e5rgags.apps.googleusercontent.com';
+  const V_GDRIVE_FILE_NAME  = 'vetlearn_data.json';
+  const V_GDRIVE_TOKEN_KEY  = 'vetlearn_gdrive_token';
+  const V_GDRIVE_FILEID_KEY = 'vetlearn_gdrive_fileid';
+  const V_GDRIVE_AUTHED_KEY = 'vetlearn_gdrive_authed';
+  const V_SETTINGS_KEY      = 'vetlearn_settings';
+
+  function vGetSettings() {
+    try { return { driveEnabled: false, ...JSON.parse(localStorage.getItem(V_SETTINGS_KEY) || '{}') }; }
+    catch { return { driveEnabled: false }; }
+  }
+  function vSaveSettings(s) { localStorage.setItem(V_SETTINGS_KEY, JSON.stringify(s)); }
+
+  function vGetData() {
+    try {
+      const raw = localStorage.getItem(V_STORAGE_KEY);
+      if (!raw) return { categories: [], items: [], nextId: { categories: 1, items: 1 } };
+      const d = JSON.parse(raw);
+      if (!d.nextId) d.nextId = { categories: 1, items: 1 };
+      return d;
+    } catch { return { categories: [], items: [], nextId: { categories: 1, items: 1 } }; }
+  }
+  function vWriteLocal(data) { localStorage.setItem(V_STORAGE_KEY, JSON.stringify(data)); }
+  function vSaveData(data) { vWriteLocal(data); VetSync.scheduleSyncToCloud(); }
+
+  function vAllocId(data, type) {
+    if (!data.nextId) data.nextId = { categories: 1, items: 1 };
+    const id = data.nextId[type] || 1;
+    data.nextId[type] = id + 1;
+    return id;
+  }
+
+  function vSm2(grade, ef, iv, reps) {
+    let newIv, newReps, newEf;
+    if (grade >= 3) {
+      newIv   = reps === 0 ? 1 : reps === 1 ? 6 : Math.round(iv * ef);
+      newReps = reps + 1;
+      newEf   = Math.max(1.3, ef + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
+    } else {
+      newIv = 1; newReps = 0; newEf = Math.max(1.3, ef - 0.2);
+    }
+    const d = new Date(); d.setDate(d.getDate() + newIv);
+    return { ef: +newEf.toFixed(4), iv: newIv, reps: newReps, nextDate: d.toISOString().slice(0, 10) };
+  }
+
+  function vNormalizeItem(i) {
+    return {
+      ...i,
+      name:             i.name || i.title || '',
+      trust_flag:       i.trust_flag || '✅',
+      proficiency:      i.proficiency || 0,
+      ease_factor:      i.ease_factor || 2.5,
+      interval_days:    i.interval_days || i.interval || 1,
+      repetitions:      i.repetitions || 0,
+      next_review_date: i.next_review_date || i.next_review || null,
+      related_item_ids: i.related_item_ids || [],
+      attachments:      i.attachments || [],
+    };
+  }
+
+  function vGetDescendantIds(categories, catId) {
+    const result = new Set([catId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      categories.forEach(c => {
+        if (c.parent_id !== null && c.parent_id !== undefined && result.has(c.parent_id) && !result.has(c.id)) {
+          result.add(c.id); changed = true;
+        }
+      });
+    }
+    return result;
+  }
+
+  function vDbGetItems(q, catId) {
+    const data = vGetData();
+    let items = data.items;
+    if (q) {
+      const lower = q.toLowerCase();
+      items = items.filter(i => (i.name || i.title || '').toLowerCase().includes(lower));
+    } else if (catId !== undefined && catId !== null) {
+      const catIds = vGetDescendantIds(data.categories, catId);
+      items = items.filter(i => catIds.has(i.category_id));
+    }
+    return items.map(vNormalizeItem).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  }
+
+  function vDbGetItem(id) {
+    const data = vGetData();
+    const item = data.items.find(i => i.id === id);
+    if (!item) return null;
+    const norm = vNormalizeItem(item);
+    norm.breadcrumb  = (() => {
+      const crumbs = []; let cid = norm.category_id;
+      while (cid) { const c = data.categories.find(x => x.id === cid); if (!c) break; crumbs.unshift({ id: c.id, name: c.name }); cid = c.parent_id; }
+      return crumbs;
+    })();
+    norm.related_tags = (norm.related_item_ids).map(rid => {
+      const rel = data.items.find(i => i.id === rid);
+      return rel ? { id: rel.id, name: rel.name || rel.title || '' } : null;
+    }).filter(Boolean);
+    return norm;
+  }
+
+  function vDbGetRandom() {
+    const data = vGetData();
+    const today = new Date().toISOString().slice(0, 10);
+    const seen = new Set(); const res = [];
+    const add = i => { if (!seen.has(i.id)) { seen.add(i.id); res.push(vNormalizeItem(i)); } };
+    data.items.filter(i => (i.next_review_date||i.next_review) && (i.next_review_date||i.next_review) <= today)
+      .sort((a, b) => (a.next_review_date||a.next_review||'').localeCompare(b.next_review_date||b.next_review||'')).forEach(add);
+    data.items.filter(i => ['⚠️','❓'].includes(i.trust_flag))
+      .sort((a, b) => (a.proficiency||0) - (b.proficiency||0)).forEach(add);
+    [...data.items].sort((a, b) => (a.proficiency||0) - (b.proficiency||0)).forEach(add);
+    return res.slice(0, 3);
+  }
+
+  function vDbCreateItem(payload) {
+    const data = vGetData(); const id = vAllocId(data, 'items');
+    const today = new Date().toISOString().slice(0, 10);
+    data.items.push({
+      id, name: (payload.name||'').trim(), category_id: payload.category_id||null,
+      definition: payload.definition||'', normal_values: payload.normal_values||'',
+      clinical_significance: payload.clinical_significance||'', related_diseases: payload.related_diseases||'',
+      notes: payload.notes||'', proficiency: 0, trust_flag: '✅', ease_factor: 2.5,
+      interval_days: 1, repetitions: 0, next_review_date: today,
+      related_item_ids: payload.related_tag_ids||[], attachments: payload.attachments||[], created_at: today,
+    });
+    vSaveData(data); return id;
+  }
+
+  function vDbUpdateItem(id, payload) {
+    const data = vGetData(); const idx = data.items.findIndex(i => i.id === id);
+    if (idx < 0) return false;
+    const item = data.items[idx];
+    data.items[idx] = {
+      ...item,
+      name:                  payload.name !== undefined ? payload.name : (item.name||item.title||''),
+      category_id:           payload.category_id !== undefined ? payload.category_id : item.category_id,
+      definition:            payload.definition !== undefined ? payload.definition : (item.definition||''),
+      normal_values:         payload.normal_values !== undefined ? payload.normal_values : (item.normal_values||''),
+      clinical_significance: payload.clinical_significance !== undefined ? payload.clinical_significance : (item.clinical_significance||''),
+      related_diseases:      payload.related_diseases !== undefined ? payload.related_diseases : (item.related_diseases||''),
+      notes:                 payload.notes !== undefined ? payload.notes : (item.notes||''),
+      trust_flag:            payload.trust_flag !== undefined ? payload.trust_flag : (item.trust_flag||'✅'),
+      related_item_ids:      payload.related_tag_ids !== undefined ? payload.related_tag_ids : (item.related_item_ids||[]),
+      attachments:           payload.attachments !== undefined ? payload.attachments : (item.attachments||[]),
+    };
+    vSaveData(data); return true;
+  }
+
+  function vDbUpdateProficiency(id, grade) {
+    const data = vGetData(); const idx = data.items.findIndex(i => i.id === id);
+    if (idx < 0) return null;
+    const item = data.items[idx];
+    const { ef, iv, reps, nextDate } = vSm2(grade, item.ease_factor||2.5, item.interval_days||item.interval||1, item.repetitions||0);
+    data.items[idx] = { ...item, proficiency: grade, ease_factor: ef, interval_days: iv, repetitions: reps, next_review_date: nextDate };
+    vSaveData(data); return nextDate;
+  }
+
+  function vDbUpdateTrust(id, flag) {
+    const data = vGetData(); const idx = data.items.findIndex(i => i.id === id);
+    if (idx < 0) return false;
+    data.items[idx] = { ...data.items[idx], trust_flag: flag };
+    vSaveData(data); return true;
+  }
+
+  function vDbDeleteItem(id) {
+    const data = vGetData();
+    data.items = data.items.filter(i => i.id !== id);
+    data.items.forEach(i => { if (i.related_item_ids) i.related_item_ids = i.related_item_ids.filter(r => r !== id); });
+    vSaveData(data);
+  }
+
+  function vDbCreateCategory(name, parentId, level) {
+    const data = vGetData(); const id = vAllocId(data, 'categories');
+    const cat = { id, name: name.trim(), parent_id: parentId||null, level: level||1 };
+    data.categories.push(cat); vSaveData(data); return cat;
+  }
+
+  // ── VetLearn UI helpers ───────────────────────────────────────────
+  function vToast(msg, ms = 2200) {
+    const el = document.getElementById('v-toast');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  let v_confirmResolve = null;
+  function vShowConfirm(title, msg, okLabel = '削除') {
+    return new Promise(res => {
+      v_confirmResolve = res;
+      document.getElementById('v-confirm-title').textContent = title;
+      document.getElementById('v-confirm-msg').textContent   = msg;
+      document.getElementById('v-confirm-ok').textContent    = okLabel;
+      document.getElementById('v-confirm-overlay').classList.add('open');
+    });
+  }
+  document.getElementById('v-confirm-cancel').addEventListener('click', () => {
+    document.getElementById('v-confirm-overlay').classList.remove('open');
+    if (v_confirmResolve) { v_confirmResolve(false); v_confirmResolve = null; }
+  });
+  document.getElementById('v-confirm-ok').addEventListener('click', () => {
+    document.getElementById('v-confirm-overlay').classList.remove('open');
+    if (v_confirmResolve) { v_confirmResolve(true); v_confirmResolve = null; }
+  });
+
+  const v_navStack = [];
+  function vNavigateTo(screenId) {
+    const el = document.getElementById(screenId);
+    el.style.zIndex = 220 + v_navStack.length;
+    v_navStack.push(screenId);
+    el.classList.add('open');
+  }
+  function vNavigateBack() {
+    if (!v_navStack.length) return;
+    document.getElementById(v_navStack.pop()).classList.remove('open');
+  }
+
+  const v_drawer = document.getElementById('v-drawer');
+  const v_drawerOverlay = document.getElementById('v-drawer-overlay');
+  function vOpenDrawer()  { v_drawer.classList.add('open'); v_drawerOverlay.classList.add('open'); }
+  function vCloseDrawer() { v_drawer.classList.remove('open'); v_drawerOverlay.classList.remove('open'); }
+  document.getElementById('v-hamburger-btn').addEventListener('click', vOpenDrawer);
+  v_drawerOverlay.addEventListener('click', vCloseDrawer);
+
+  function vFmtDate(iso) {
+    if (!iso) return '未設定';
+    const d = new Date(iso + 'T00:00:00');
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function vIsOverdue(iso) { return !!iso && iso < new Date().toISOString().slice(0, 10); }
+  function vTodayStr() { return new Date().toISOString().slice(0, 10); }
+
+  function vStarsHtml(prof, big = false) {
+    let h = '';
+    for (let i = 1; i <= 5; i++) {
+      h += big
+        ? `<span class="v-star-big${i <= prof ? ' on' : ''}" data-star="${i}">★</span>`
+        : `<span class="v-star-s${i <= prof ? ' on' : ''}">★</span>`;
+    }
+    return h;
+  }
+
+  let v_allCats = [];
+  function vRefreshCats() { v_allCats = vGetData().categories; }
+
+  function vBuildCatTree(cats) {
+    const map = {}; cats.forEach(c => { map[c.id] = { ...c, children: [] }; });
+    const roots = [];
+    cats.forEach(c => {
+      if (c.parent_id && map[c.parent_id]) map[c.parent_id].children.push(map[c.id]);
+      else roots.push(map[c.id]);
+    });
+    return roots;
+  }
+
+  function vMakeCrumb(item) {
+    if (!v_allCats.length) return '';
+    const crumbs = []; let cid = item.category_id;
+    while (cid) { const c = v_allCats.find(x => x.id === cid); if (!c) break; crumbs.unshift(c.name); cid = c.parent_id; }
+    return crumbs.join(' › ');
+  }
+
+  // ── Home: random cards ────────────────────────────────────────────
+  function vLoadRandomCards() {
+    const wrap  = document.getElementById('v-random-cards');
+    const items = vDbGetRandom();
+    wrap.innerHTML = '';
+    if (!items.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>項目がありません<br>＋ボタンで追加するか<br>設定からJSONをインポートしてください</p></div>';
+      return;
+    }
+    items.forEach(item => wrap.appendChild(vMakeReviewCard(item)));
+  }
+
+  function vMakeReviewCard(item) {
+    const div = document.createElement('div');
+    div.className = 'v-review-card';
+    const od = vIsOverdue(item.next_review_date);
+    div.innerHTML = `
+      <div class="v-review-card-top">
+        <div class="v-review-card-name">${esc(item.name)}</div>
+        <div class="v-review-card-trust">${item.trust_flag}</div>
+      </div>
+      <div class="v-review-card-crumb">${esc(vMakeCrumb(item)) || '未分類'}</div>
+      <div class="v-review-card-bottom">
+        <div class="v-stars-small">${vStarsHtml(item.proficiency)}</div>
+        ${od ? `<span class="v-overdue-badge">期限超過</span>` : `<span class="v-review-date-small">次回: ${vFmtDate(item.next_review_date)}</span>`}
+      </div>`;
+    div.addEventListener('click', () => vOpenDetail(item.id));
+    return div;
+  }
+
+  document.getElementById('v-refresh-btn').addEventListener('click', vLoadRandomCards);
+
+  // ── Home: search ──────────────────────────────────────────────────
+  let v_searchTimer = null;
+  const v_searchInput = document.getElementById('v-search-input');
+  const v_searchClear = document.getElementById('v-search-clear');
+  const v_searchSec   = document.getElementById('v-search-section');
+  const v_searchRes   = document.getElementById('v-search-results');
+  const v_randomSec   = document.getElementById('v-random-section');
+
+  v_searchInput.addEventListener('input', () => {
+    const q = v_searchInput.value.trim();
+    v_searchClear.classList.toggle('hidden', !q);
+    clearTimeout(v_searchTimer);
+    if (!q) { v_searchSec.classList.add('hidden'); v_randomSec.classList.remove('hidden'); return; }
+    v_searchTimer = setTimeout(() => vDoSearch(q), 200);
+  });
+  v_searchClear.addEventListener('click', () => {
+    v_searchInput.value = ''; v_searchClear.classList.add('hidden');
+    v_searchSec.classList.add('hidden'); v_randomSec.classList.remove('hidden');
+  });
+
+  function vDoSearch(q) {
+    const items = vDbGetItems(q, null);
+    v_searchSec.classList.remove('hidden'); v_randomSec.classList.add('hidden');
+    v_searchRes.innerHTML = '';
+    if (!items.length) { v_searchRes.innerHTML = '<div class="empty-state"><div class="emoji">🔍</div><p>見つかりません</p></div>'; return; }
+    items.forEach(item => v_searchRes.appendChild(vMakeItemRow(item, true)));
+  }
+
+  function vMakeItemRow(item, showCrumb = false) {
+    const div = document.createElement('div');
+    div.className = 'v-item-row';
+    div.innerHTML = `
+      <div class="v-item-row-main">
+        <div class="v-item-row-name">${esc(item.name)}</div>
+        ${showCrumb ? `<div class="v-item-row-sub">${esc(vMakeCrumb(item)) || '未分類'}</div>` : ''}
+      </div>
+      <div class="v-item-row-right">
+        <div class="v-stars-small">${vStarsHtml(item.proficiency)}</div>
+        <span class="v-item-trust">${item.trust_flag}</span>
+      </div>`;
+    div.addEventListener('click', () => vOpenDetail(item.id));
+    return div;
+  }
+
+  document.getElementById('v-fab').addEventListener('click', () => vOpenEdit(null, null));
+
+  // ── Category tree screen ──────────────────────────────────────────
+  document.getElementById('v-menu-categories').addEventListener('click', e => {
+    e.preventDefault(); vCloseDrawer(); vRefreshCats(); vRenderCatTree(); vNavigateTo('v-screen-categories');
+  });
+  document.getElementById('v-cat-back-btn').addEventListener('click', vNavigateBack);
+
+  function vRenderCatTree() {
+    const body = document.getElementById('v-cat-tree-body');
+    const tree = vBuildCatTree(v_allCats);
+    if (!tree.length) {
+      body.innerHTML = '<div class="empty-state"><div class="emoji">📂</div><p>カテゴリがありません<br>設定からJSONをインポートしてください</p></div>';
+      return;
+    }
+    const ul = document.createElement('ul'); ul.className = 'v-cat-list';
+    tree.forEach(node => ul.appendChild(vMakeCatNode(node)));
+    body.innerHTML = ''; body.appendChild(ul);
+  }
+
+  function vCountItemsInSubtree(catId) {
+    const data = vGetData(); const catIds = vGetDescendantIds(data.categories, catId);
+    return data.items.filter(i => catIds.has(i.category_id)).length;
+  }
+
+  function vMakeCatNode(node) {
+    const li = document.createElement('li'); li.className = 'v-cat-node';
+    const row = document.createElement('div'); row.className = 'v-cat-row';
+    if (node.children.length) {
+      const chevron = document.createElement('button'); chevron.className = 'v-cat-chevron-btn'; chevron.textContent = '›';
+      chevron.addEventListener('click', e => { e.stopPropagation(); li.classList.toggle('expanded'); });
+      row.appendChild(chevron);
+    } else {
+      const sp = document.createElement('span'); sp.className = 'v-cat-spacer'; row.appendChild(sp);
+    }
+    const nameBtn = document.createElement('button'); nameBtn.className = 'v-cat-name-btn'; nameBtn.textContent = node.name;
+    nameBtn.addEventListener('click', () => vOpenItemsScreen(node.id, node.name));
+    row.appendChild(nameBtn);
+    const cnt = document.createElement('span'); cnt.className = 'v-cat-count'; cnt.textContent = vCountItemsInSubtree(node.id) + '件';
+    row.appendChild(cnt); li.appendChild(row);
+    if (node.children.length) {
+      const ul = document.createElement('ul'); ul.className = 'v-cat-list v-cat-children';
+      node.children.forEach(child => ul.appendChild(vMakeCatNode(child))); li.appendChild(ul);
+    }
+    return li;
+  }
+
+  // ── Items list screen ─────────────────────────────────────────────
+  let v_currentCategoryId = null;
+  let v_selectedItemIds   = new Set();
+
+  function vOpenItemsScreen(catId, catName) {
+    v_currentCategoryId = catId; v_selectedItemIds.clear(); vUpdateItemsDeleteBar();
+    document.getElementById('v-items-title').textContent = catName;
+    vNavigateTo('v-screen-items'); vRefreshItemsList();
+  }
+
+  function vRefreshItemsList() {
+    if (v_currentCategoryId === null) return;
+    v_selectedItemIds.clear(); vUpdateItemsDeleteBar();
+    const items = vDbGetItems(null, v_currentCategoryId);
+    const body  = document.getElementById('v-items-body');
+    body.innerHTML = '';
+    if (!items.length) { body.innerHTML = '<div class="empty-state"><div class="emoji">📝</div><p>まだ項目がありません<br>＋ボタンで追加してください</p></div>'; return; }
+    const wrap = document.createElement('div'); wrap.style.padding = '12px 16px';
+    items.forEach(item => wrap.appendChild(vMakeSelectableItemRow(item))); body.appendChild(wrap);
+  }
+
+  function vMakeSelectableItemRow(item) {
+    const row = document.createElement('div'); row.className = 'v-sel-item-row'; row.dataset.id = item.id;
+    const cbArea = document.createElement('div'); cbArea.className = 'v-sel-cb-area';
+    const cbIcon = document.createElement('div'); cbIcon.className = 'v-sel-cb-icon';
+    cbArea.appendChild(cbIcon);
+    cbArea.addEventListener('click', e => {
+      e.stopPropagation();
+      const checked = v_selectedItemIds.has(item.id);
+      if (checked) v_selectedItemIds.delete(item.id); else v_selectedItemIds.add(item.id);
+      cbIcon.classList.toggle('on', !checked); row.classList.toggle('checked', !checked); vUpdateItemsDeleteBar();
+    });
+    const content = document.createElement('div'); content.className = 'v-sel-item-content';
+    const crumb = item.category_id !== v_currentCategoryId ? vMakeCrumb(item) : '';
+    content.innerHTML = `
+      <div class="v-item-row-name">${esc(item.name)}</div>
+      ${crumb ? `<div class="v-item-row-sub">${esc(crumb)}</div>` : ''}
+      <div class="v-item-row-right" style="margin-top:4px;justify-content:flex-start">
+        <div class="v-stars-small">${vStarsHtml(item.proficiency)}</div>
+        <span class="v-item-trust" style="font-size:14px;margin-left:6px">${item.trust_flag}</span>
+        ${vIsOverdue(item.next_review_date) ? '<span class="v-overdue-badge" style="margin-left:6px">期限超過</span>' : ''}
+      </div>`;
+    content.addEventListener('click', () => vOpenDetail(item.id));
+    row.appendChild(cbArea); row.appendChild(content); return row;
+  }
+
+  function vUpdateItemsDeleteBar() {
+    const bar = document.getElementById('v-items-delete-bar');
+    const btn = document.getElementById('v-items-delete-btn');
+    const n   = v_selectedItemIds.size;
+    btn.textContent = `${n}件を削除`; bar.classList.toggle('visible', n > 0);
+  }
+
+  document.getElementById('v-items-delete-btn').addEventListener('click', async () => {
+    const ids = [...v_selectedItemIds]; if (!ids.length) return;
+    const ok = await vShowConfirm(`${ids.length}件を削除しますか？`, 'この操作は元に戻せません。選択した項目をすべて完全削除します。');
+    if (!ok) return;
+    ids.forEach(id => vDbDeleteItem(id)); v_selectedItemIds.clear(); vUpdateItemsDeleteBar();
+    vToast(`${ids.length}件を削除しました`); vRefreshItemsList(); vLoadRandomCards();
+  });
+  document.getElementById('v-items-back-btn').addEventListener('click', () => { v_selectedItemIds.clear(); vUpdateItemsDeleteBar(); vNavigateBack(); });
+  document.getElementById('v-add-item-btn').addEventListener('click', () => vOpenEdit(null, v_currentCategoryId));
+
+  // ── Detail screen ─────────────────────────────────────────────────
+  let v_currentItemId = null;
+
+  function vOpenDetail(itemId) { v_currentItemId = itemId; vNavigateTo('v-screen-detail'); vRenderDetail(itemId); }
+
+  function vRenderDetail(itemId) {
+    const item = vDbGetItem(itemId);
+    const body = document.getElementById('v-detail-body');
+    if (!item) { body.innerHTML = '<div class="empty-state"><p>見つかりません</p></div>'; return; }
+    body.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className = 'v-detail-wrap';
+
+    const crumbEl = document.createElement('div'); crumbEl.className = 'v-breadcrumb';
+    const parts = [...item.breadcrumb.map(c => `<span>${esc(c.name)}</span>`), `<span style="font-weight:600;color:var(--text)">${esc(item.name)}</span>`];
+    crumbEl.innerHTML = parts.join('<span class="v-breadcrumb-sep"> › </span>'); wrap.appendChild(crumbEl);
+
+    const nameEl = document.createElement('div'); nameEl.className = 'v-detail-name'; nameEl.textContent = item.name; wrap.appendChild(nameEl);
+
+    const metaCard = document.createElement('div'); metaCard.className = 'v-detail-meta-card';
+    const od = vIsOverdue(item.next_review_date);
+    metaCard.innerHTML = `<div class="v-meta-row"><span class="v-meta-label">次回復習</span><span class="v-review-date-val${od?' overdue':''}" id="v-detail-review-date">${od?'⚡ ':''}${vFmtDate(item.next_review_date)}</span></div>`;
+
+    const profRow = document.createElement('div'); profRow.className = 'v-meta-row';
+    profRow.innerHTML = `<span class="v-meta-label">習熟度</span><div class="v-stars-big" id="v-detail-stars">${vStarsHtml(item.proficiency, true)}</div>`;
+    metaCard.appendChild(profRow);
+
+    const trustRow = document.createElement('div'); trustRow.className = 'v-meta-row';
+    trustRow.innerHTML = `<span class="v-meta-label">信頼度</span><button class="v-trust-flag-btn" id="v-detail-trust">${item.trust_flag}</button>`;
+    metaCard.appendChild(trustRow); wrap.appendChild(metaCard);
+
+    const starsEl = metaCard.querySelector('#v-detail-stars');
+    starsEl.addEventListener('click', e => {
+      const star = e.target.closest('[data-star]'); if (!star) return;
+      const newProf = parseInt(star.dataset.star);
+      starsEl.querySelectorAll('.v-star-big').forEach((s, i) => s.classList.toggle('on', i < newProf));
+      const nextDate = vDbUpdateProficiency(itemId, newProf);
+      const rdEl = metaCard.querySelector('#v-detail-review-date');
+      const ndOd = vIsOverdue(nextDate);
+      rdEl.className = 'v-review-date-val' + (ndOd ? ' overdue' : '');
+      rdEl.textContent = (ndOd ? '⚡ ' : '') + vFmtDate(nextDate);
+      vToast('習熟度を更新しました'); vLoadRandomCards(); renderDashboardReviews();
+    });
+
+    const V_TRUST_CYCLE = ['✅','⚠️','❓'];
+    let v_currentTrust = item.trust_flag;
+    const trustBtn = metaCard.querySelector('#v-detail-trust');
+    trustBtn.addEventListener('click', () => {
+      v_currentTrust = V_TRUST_CYCLE[(V_TRUST_CYCLE.indexOf(v_currentTrust) + 1) % V_TRUST_CYCLE.length];
+      trustBtn.textContent = v_currentTrust; vDbUpdateTrust(itemId, v_currentTrust); vToast('信頼度を更新しました');
+    });
+
+    [
+      { key: 'definition', label: '定義' }, { key: 'normal_values', label: '正常値' },
+      { key: 'clinical_significance', label: '臨床的意義' }, { key: 'related_diseases', label: '関連疾患' },
+      { key: 'notes', label: '備考' },
+    ].forEach(({ key, label }) => {
+      const sec = document.createElement('div'); sec.className = 'v-detail-section';
+      sec.innerHTML = `<div class="v-detail-section-title">${label}</div>`;
+      const bd = document.createElement('div');
+      if (item[key] && item[key].trim()) { bd.className = 'v-detail-section-body'; bd.textContent = item[key]; }
+      else { bd.className = 'v-detail-section-empty'; bd.textContent = '（未記入）'; }
+      sec.appendChild(bd); wrap.appendChild(sec);
+    });
+
+    if (item.related_tags && item.related_tags.length) {
+      const relSec = document.createElement('div'); relSec.className = 'v-detail-section';
+      relSec.innerHTML = `<div class="v-detail-section-title">関連タグ</div>`;
+      const chips = document.createElement('div'); chips.className = 'v-related-tags-wrap';
+      item.related_tags.forEach(rt => {
+        const btn = document.createElement('button'); btn.className = 'v-related-tag-chip'; btn.textContent = rt.name;
+        btn.addEventListener('click', () => vOpenDetail(rt.id)); chips.appendChild(btn);
+      });
+      relSec.appendChild(chips); wrap.appendChild(relSec);
+    }
+
+    const imgAtts = (item.attachments||[]).filter(a => a.data);
+    if (imgAtts.length) {
+      const attSec = document.createElement('div'); attSec.className = 'v-detail-section';
+      attSec.innerHTML = `<div class="v-detail-section-title">添付画像</div>`;
+      imgAtts.forEach(a => {
+        const img = document.createElement('img'); img.className = 'v-detail-attach-img';
+        img.src = a.data; img.alt = esc(a.filename||'');
+        img.addEventListener('click', () => vOpenImgPopup(a.data)); attSec.appendChild(img);
+      });
+      wrap.appendChild(attSec);
+    }
+
+    const editBtn = document.createElement('button'); editBtn.className = 'v-detail-edit-btn'; editBtn.textContent = '編集';
+    editBtn.addEventListener('click', () => vOpenEdit(itemId, item.category_id)); wrap.appendChild(editBtn);
+
+    const delBtn = document.createElement('button'); delBtn.className = 'v-detail-delete-btn'; delBtn.textContent = 'この項目を削除';
+    delBtn.addEventListener('click', async () => {
+      const ok = await vShowConfirm('削除しますか？', `「${item.name}」を完全に削除します。この操作は元に戻せません。`);
+      if (!ok) return;
+      vDbDeleteItem(itemId); vNavigateBack(); vToast('削除しました');
+      vLoadRandomCards(); renderDashboardReviews();
+      if (v_currentCategoryId !== null) vRefreshItemsList();
+    });
+    wrap.appendChild(delBtn); body.appendChild(wrap);
+  }
+
+  document.getElementById('v-detail-back-btn').addEventListener('click', vNavigateBack);
+
+  // ── Edit screen ───────────────────────────────────────────────────
+  let v_editState = {};
+
+  function vRenderAttachList() {
+    const wrap = document.getElementById('v-attach-preview-list'); wrap.innerHTML = '';
+    (v_editState.attachments||[]).forEach((att, idx) => {
+      if (!att.data) return;
+      const thumbWrap = document.createElement('div'); thumbWrap.className = 'v-attach-thumb-wrap';
+      const img = document.createElement('img'); img.className = 'v-attach-thumb'; img.src = att.data;
+      const del = document.createElement('button'); del.className = 'v-attach-del-btn'; del.textContent = '×';
+      del.addEventListener('click', e => { e.preventDefault(); v_editState.attachments.splice(idx, 1); vRenderAttachList(); });
+      thumbWrap.appendChild(img); thumbWrap.appendChild(del); wrap.appendChild(thumbWrap);
+    });
+  }
+
+  document.getElementById('v-attach-add-btn').addEventListener('click', () => document.getElementById('v-attach-input').click());
+
+  function vCompressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader(); reader.onerror = reject;
+      reader.onload = e => {
+        const img = new Image(); img.onerror = reject;
+        img.onload = () => {
+          const MAX = 1200; let { width: w, height: h } = img;
+          if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } }
+          const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve({ filename: file.name, data: canvas.toDataURL('image/jpeg', 0.7) });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('v-attach-input').addEventListener('change', function() {
+    const files = [...this.files]; this.value = '';
+    Promise.all(files.map(vCompressImage)).then(results => { v_editState.attachments.push(...results); vRenderAttachList(); })
+      .catch(() => vToast('画像の読み込みに失敗しました'));
+  });
+
+  function vOpenEdit(itemId, defaultCatId) {
+    v_editState = { isNew: itemId === null, itemId, relatedTagIds: [], attachments: [] };
+    document.getElementById('v-edit-screen-title').textContent = itemId ? '編集' : '新規追加';
+    ['v-edit-name','v-edit-definition','v-edit-normal','v-edit-clinical','v-edit-diseases','v-edit-notes'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('v-related-chips').innerHTML = '';
+    document.getElementById('v-related-search').value = '';
+    document.getElementById('v-related-dropdown').classList.remove('open');
+    document.getElementById('v-related-dropdown').innerHTML = '';
+    vRenderAttachList();
+    for (let l = 1; l <= 4; l++) {
+      document.getElementById(`v-cat-sel-${l}`).innerHTML = '';
+      if (l > 1) document.getElementById(`v-cat-lv${l}-wrap`).style.display = 'none';
+    }
+    vRefreshCats(); vPopulateCatLevel(1, null); vNavigateTo('v-screen-edit');
+    if (itemId) {
+      const item = vDbGetItem(itemId);
+      if (item) {
+        document.getElementById('v-edit-name').value       = item.name||'';
+        document.getElementById('v-edit-definition').value = item.definition||'';
+        document.getElementById('v-edit-normal').value     = item.normal_values||'';
+        document.getElementById('v-edit-clinical').value   = item.clinical_significance||'';
+        document.getElementById('v-edit-diseases').value   = item.related_diseases||'';
+        document.getElementById('v-edit-notes').value      = item.notes||'';
+        v_editState.relatedTagIds = item.related_item_ids||[];
+        v_editState.attachments   = (item.attachments||[]).filter(a => a.data);
+        vRenderRelatedChips(item.related_tags); vRenderAttachList();
+        if (item.category_id) vSetCatCascadeById(item.category_id);
+      }
+    } else if (defaultCatId) { vSetCatCascadeById(defaultCatId); }
+  }
+
+  function vSetCatCascadeById(catId) {
+    const path = []; let cid = catId;
+    while (cid) { const c = v_allCats.find(x => x.id === cid); if (!c) break; path.unshift(c); cid = c.parent_id; }
+    for (let i = 0; i < path.length; i++) {
+      const level = i + 1; const parentId = i > 0 ? path[i-1].id : null;
+      vPopulateCatLevel(level, parentId); document.getElementById(`v-cat-sel-${level}`).value = path[i].id;
+    }
+    const nextLevel = path.length + 1;
+    if (nextLevel <= 4 && path.length) {
+      const children = v_allCats.filter(c => c.parent_id === path[path.length-1].id);
+      if (children.length) vPopulateCatLevel(nextLevel, path[path.length-1].id);
+    }
+  }
+
+  function vPopulateCatLevel(level, parentId) {
+    const sel  = document.getElementById(`v-cat-sel-${level}`);
+    const wrap = level > 1 ? document.getElementById(`v-cat-lv${level}-wrap`) : null;
+    const cats = level === 1 ? v_allCats.filter(c => !c.parent_id) : v_allCats.filter(c => c.parent_id === parentId);
+    sel.innerHTML = '<option value="">-- 未選択 --</option>';
+    cats.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt); });
+    const addOpt = document.createElement('option'); addOpt.value = '__new__'; addOpt.textContent = '＋ 新規追加'; sel.appendChild(addOpt);
+    if (wrap) wrap.style.display = 'flex';
+  }
+
+  for (let level = 1; level <= 4; level++) {
+    document.getElementById(`v-cat-sel-${level}`).addEventListener('change', function() {
+      const val = this.value;
+      for (let l = level + 1; l <= 4; l++) {
+        document.getElementById(`v-cat-sel-${l}`).innerHTML = '<option value="">-- 未選択 --</option>';
+        const w = document.getElementById(`v-cat-lv${l}-wrap`); if (w) w.style.display = 'none';
+      }
+      if (val === '__new__') {
+        const name = prompt(`レベル${level}のカテゴリ名を入力してください:`);
+        if (!name || !name.trim()) { this.value = ''; return; }
+        const parentId = level > 1 ? vGetParentForLevel(level) : null;
+        const newCat   = vDbCreateCategory(name.trim(), parentId, level);
+        vRefreshCats(); vPopulateCatLevel(level, parentId); this.value = newCat.id;
+        if (level < 4) vPopulateCatLevel(level + 1, newCat.id); return;
+      }
+      if (!val) return;
+      const catId = parseInt(val);
+      if (level < 4) { const children = v_allCats.filter(c => c.parent_id === catId); if (children.length) vPopulateCatLevel(level + 1, catId); }
+    });
+  }
+
+  function vGetParentForLevel(level) {
+    if (level <= 1) return null;
+    const sel = document.getElementById(`v-cat-sel-${level - 1}`); const v = sel.value;
+    return (v && v !== '__new__') ? parseInt(v) : null;
+  }
+
+  function vGetSelectedCategoryId() {
+    for (let l = 4; l >= 1; l--) {
+      const sel = document.getElementById(`v-cat-sel-${l}`);
+      const wrap = l > 1 ? document.getElementById(`v-cat-lv${l}-wrap`) : null;
+      if ((!wrap || wrap.style.display !== 'none') && sel.value && sel.value !== '__new__') return parseInt(sel.value);
+    }
+    return null;
+  }
+
+  function vRenderRelatedChips(tags) {
+    const wrap = document.getElementById('v-related-chips'); wrap.innerHTML = '';
+    tags.forEach(t => {
+      const chip = document.createElement('span'); chip.className = 'v-rel-chip'; chip.dataset.id = t.id;
+      chip.innerHTML = `${esc(t.name)}<button class="v-rel-chip-del" data-id="${t.id}">×</button>`;
+      wrap.appendChild(chip);
+    });
+    wrap.querySelectorAll('.v-rel-chip-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id);
+        v_editState.relatedTagIds = v_editState.relatedTagIds.filter(x => x !== id);
+        btn.closest('.v-rel-chip').remove();
+      });
+    });
+  }
+
+  let v_relSearchTimer = null;
+  document.getElementById('v-related-search').addEventListener('input', function() {
+    clearTimeout(v_relSearchTimer);
+    const q = this.value.trim();
+    if (!q) { document.getElementById('v-related-dropdown').classList.remove('open'); return; }
+    v_relSearchTimer = setTimeout(() => {
+      const items = vDbGetItems(q, null).filter(i => i.id !== v_editState.itemId && !v_editState.relatedTagIds.includes(i.id)).slice(0, 8);
+      const dd = document.getElementById('v-related-dropdown'); dd.innerHTML = '';
+      if (!items.length) { dd.classList.remove('open'); return; }
+      items.forEach(item => {
+        const opt = document.createElement('div'); opt.className = 'v-rel-option'; opt.textContent = item.name;
+        opt.addEventListener('click', () => {
+          v_editState.relatedTagIds.push(item.id);
+          const currentChips = [...document.getElementById('v-related-chips').querySelectorAll('.v-rel-chip')].map(c => ({ id: parseInt(c.dataset.id), name: c.textContent.replace('×','').trim() }));
+          vRenderRelatedChips([...currentChips, { id: item.id, name: item.name }]);
+          document.getElementById('v-related-search').value = ''; dd.classList.remove('open');
+        });
+        dd.appendChild(opt);
+      });
+      dd.classList.add('open');
+    }, 200);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#v-related-search') && !e.target.closest('#v-related-dropdown')) {
+      document.getElementById('v-related-dropdown').classList.remove('open');
+    }
+  });
+
+  document.getElementById('v-edit-save-btn').addEventListener('click', vSaveEdit);
+  document.getElementById('v-edit-cancel-btn').addEventListener('click', vNavigateBack);
+
+  function vSaveEdit() {
+    const name = document.getElementById('v-edit-name').value.trim();
+    if (!name) { vToast('メインタグを入力してください'); document.getElementById('v-edit-name').focus(); return; }
+    const payload = {
+      category_id:           vGetSelectedCategoryId(),
+      name,
+      definition:            document.getElementById('v-edit-definition').value.trim(),
+      normal_values:         document.getElementById('v-edit-normal').value.trim(),
+      clinical_significance: document.getElementById('v-edit-clinical').value.trim(),
+      related_diseases:      document.getElementById('v-edit-diseases').value.trim(),
+      notes:                 document.getElementById('v-edit-notes').value.trim(),
+      related_tag_ids:       v_editState.relatedTagIds,
+      attachments:           v_editState.attachments||[],
+    };
+    let itemId = v_editState.itemId;
+    try {
+      if (v_editState.isNew) { itemId = vDbCreateItem(payload); vToast('追加しました'); }
+      else { vDbUpdateItem(itemId, payload); vToast('保存しました'); }
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || (e.message && e.message.includes('quota'))) vToast('ストレージ容量が不足しています。画像を減らしてください。');
+      else vToast('保存に失敗しました: ' + (e.message||e));
+      return;
+    }
+    vNavigateBack(); vOpenDetail(itemId); vLoadRandomCards(); renderDashboardReviews();
+    if (v_currentCategoryId !== null) vRefreshItemsList();
+  }
+
+  // ── Settings screen ───────────────────────────────────────────────
+  document.getElementById('v-menu-settings').addEventListener('click', e => {
+    e.preventDefault(); vCloseDrawer(); vRefreshDataStats(); vNavigateTo('v-screen-settings');
+  });
+  document.getElementById('v-settings-back-btn').addEventListener('click', vNavigateBack);
+
+  function vRefreshDataStats() {
+    const data = vGetData(); const today = vTodayStr();
+    const overdue = data.items.filter(i => (i.next_review_date||i.next_review) && (i.next_review_date||i.next_review) <= today).length;
+    document.getElementById('v-data-stats').innerHTML = `
+      <div class="v-data-stat"><span>カテゴリ</span><span class="v-data-stat-val">${data.categories.length}件</span></div>
+      <div class="v-data-stat"><span>項目</span><span class="v-data-stat-val">${data.items.length}件</span></div>
+      <div class="v-data-stat"><span>復習期限超過</span><span class="v-data-stat-val">${overdue}件</span></div>`;
+    vUpdateDriveSettingsUI();
+  }
+
+  document.getElementById('v-import-file-btn').addEventListener('click', () => document.getElementById('v-file-import-input').click());
+  document.getElementById('v-file-import-input').addEventListener('change', function() {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { try { vImportData(JSON.parse(e.target.result)); } catch { vToast('JSONの解析に失敗しました'); } };
+    reader.readAsText(file); this.value = '';
+  });
+
+  function vImportData(remote) {
+    if (!remote.categories || !remote.items) { vToast('不正なJSONフォーマットです'); return; }
+    const data = vGetData(); if (!data.nextId) data.nextId = { categories: 1, items: 1 };
+    const existingCatNames = new Set(data.categories.map(c => c.name)); const catIdMap = {};
+    remote.categories.forEach(rc => {
+      if (existingCatNames.has(rc.name)) { const local = data.categories.find(c => c.name === rc.name); if (local) catIdMap[rc.id] = local.id; }
+      else {
+        const newId = data.nextId.categories++; const mappedParent = rc.parent_id != null ? (catIdMap[rc.parent_id]??null) : null;
+        data.categories.push({ id: newId, name: rc.name, parent_id: mappedParent, level: rc.level||1 });
+        catIdMap[rc.id] = newId; existingCatNames.add(rc.name);
+      }
+    });
+    const existingItemNames = new Set(data.items.map(i => (i.name||i.title||'').trim()));
+    const today = new Date().toISOString().slice(0, 10); let added = 0, skipped = 0;
+    remote.items.forEach(ri => {
+      const rawName = (ri.main_tag||'').replace(/^#/,'').trim() || (ri.title||ri.name||'').trim();
+      if (!rawName) return;
+      if (existingItemNames.has(rawName)) { skipped++; }
+      else {
+        const newId = data.nextId.items++; const catId = ri.category_id != null ? (catIdMap[ri.category_id]??null) : null;
+        data.items.push({ id: newId, name: rawName, category_id: catId, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: 0, trust_flag: '✅', ease_factor: 2.5, interval_days: 1, repetitions: 0, next_review_date: today, related_item_ids: [], attachments: ri.attachments||[], created_at: ri.created_at||today });
+        existingItemNames.add(rawName); added++;
+      }
+    });
+    vWriteLocal(data); vRefreshCats(); vRefreshDataStats(); vLoadRandomCards(); renderDashboardReviews();
+    vToast(`${added}件追加、${skipped}件スキップ`); VetSync.scheduleSyncToCloud();
+  }
+
+  document.getElementById('v-export-btn').addEventListener('click', () => {
+    const data = vGetData();
+    const payload = { categories: data.categories, items: data.items.map(i => ({ id: i.id, title: i.name||i.title||'', main_tag: '#'+(i.name||i.title||''), category_id: i.category_id, definition: i.definition||'', normal_values: i.normal_values||'', clinical_significance: i.clinical_significance||'', related_diseases: i.related_diseases||'', notes: i.notes||'', proficiency: i.proficiency||0, trust_flag: i.trust_flag||'✅', tags: [], attachments: i.attachments||[], next_review: i.next_review_date||i.next_review||null, ease_factor: i.ease_factor||2.5, interval: i.interval_days||i.interval||1, repetitions: i.repetitions||0, related_item_ids: i.related_item_ids||[], created_at: i.created_at||'' })) };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = 'vetlearn_data.json'; a.click(); URL.revokeObjectURL(url); vToast('JSONをダウンロードしました');
+  });
+
+  document.getElementById('v-reset-btn').addEventListener('click', async () => {
+    const ok = await vShowConfirm('すべて削除しますか？', 'ローカルに保存されたすべてのデータを削除します。この操作は元に戻せません。', '削除する');
+    if (!ok) return;
+    localStorage.removeItem(V_STORAGE_KEY); vRefreshCats(); vRefreshDataStats(); vLoadRandomCards(); renderDashboardReviews(); vToast('データを削除しました');
+  });
+
+  // ── Image popup ───────────────────────────────────────────────────
+  const v_popup = (() => {
+    const inner = document.getElementById('v-img-popup-inner');
+    const img   = document.getElementById('v-img-popup-img');
+    const MIN = 0.5, MAX = 5;
+    let scale = 1, baseScale = 1, tx = 0, ty = 0, startDist = 0;
+    let panStartX = 0, panStartY = 0, lastTap = 0, isPinching = false;
+    function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+    function maxPan() { return { mx: Math.max(0, (img.offsetWidth * scale - window.innerWidth) / 2), my: Math.max(0, (img.offsetHeight * scale - window.innerHeight) / 2) }; }
+    function applyTransform() { img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+    function setScale(s) {
+      scale = clamp(s, MIN, MAX);
+      if (scale <= 1) { tx = 0; ty = 0; } else { const { mx, my } = maxPan(); tx = clamp(tx, -mx, mx); ty = clamp(ty, -my, my); }
+      applyTransform();
+    }
+    function reset() { scale = 1; baseScale = 1; tx = 0; ty = 0; isPinching = false; img.style.transform = ''; }
+    function touchDist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+    inner.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) { e.preventDefault(); isPinching = true; startDist = touchDist(e.touches); baseScale = scale; }
+      else if (e.touches.length === 1) {
+        const now = Date.now();
+        if (now - lastTap < 280) { e.preventDefault(); setScale(scale === 1 ? 2 : 1); }
+        else { panStartX = e.touches[0].clientX - tx; panStartY = e.touches[0].clientY - ty; }
+        lastTap = now;
+      }
+    }, { passive: false });
+    inner.addEventListener('touchmove', e => {
+      if (e.touches.length === 2) { e.preventDefault(); setScale(baseScale * (touchDist(e.touches) / startDist)); }
+      else if (e.touches.length === 1 && !isPinching && scale > 1) { e.preventDefault(); const { mx, my } = maxPan(); tx = clamp(e.touches[0].clientX - panStartX, -mx, mx); ty = clamp(e.touches[0].clientY - panStartY, -my, my); applyTransform(); }
+    }, { passive: false });
+    inner.addEventListener('touchend', e => {
+      if (e.touches.length < 2) isPinching = false; baseScale = scale;
+      if (e.touches.length === 1) { panStartX = e.touches[0].clientX - tx; panStartY = e.touches[0].clientY - ty; }
+    }, { passive: true });
+    return { reset };
+  })();
+
+  function vOpenImgPopup(src) { v_popup.reset(); document.getElementById('v-img-popup-img').src = src; document.getElementById('v-img-popup').classList.add('open'); }
+  function vCloseImgPopup() { document.getElementById('v-img-popup').classList.remove('open'); v_popup.reset(); document.getElementById('v-img-popup-img').src = ''; }
+  document.getElementById('v-img-popup').addEventListener('click', e => { if (e.target === document.getElementById('v-img-popup')) vCloseImgPopup(); });
+  document.getElementById('v-img-popup-close').addEventListener('click', vCloseImgPopup);
+
+  // ── VetSync Drive helpers ─────────────────────────────────────────
+  function vShowSyncIndicator(on) { document.getElementById('v-sync-indicator').classList.toggle('active', on); }
+  function vShowDriveSyncStatus(status) {
+    const el = document.getElementById('v-drive-sync-status'); if (!el) return;
+    const msg = { ok: '✓ 同期完了', error: '⚠ 同期エラー（次回再試行）', offline: '📶 オフライン中' };
+    el.textContent = msg[status] || '';
+  }
+  function vUpdateDriveSettingsUI() {
+    const s = vGetSettings(); const toggle = document.getElementById('v-setting-drive-toggle'); const subrow = document.getElementById('v-setting-drive-subrow');
+    if (!toggle || !subrow) return;
+    toggle.checked = s.driveEnabled; subrow.style.display = s.driveEnabled ? 'block' : 'none';
+    if (!s.driveEnabled) return;
+    const authed = VetSync.isAuthed();
+    document.getElementById('v-drive-signin-area').style.display  = authed ? 'none'  : 'block';
+    document.getElementById('v-drive-account-area').style.display = authed ? 'block' : 'none';
+    if (authed) document.getElementById('v-drive-account-status').textContent = '✓ Googleアカウント接続中';
+  }
+
+  function vApplyCloudData(remote) {
+    if (!remote || !remote.categories || !remote.items) return;
+    const local = vGetData(); const localById = {};
+    local.items.forEach(i => { localById[i.id] = i; });
+    const maxCatId = remote.categories.reduce((m, c) => Math.max(m, c.id||0), 0);
+    const maxItemId = remote.items.reduce((m, i) => Math.max(m, i.id||0), 0);
+    const merged = {
+      categories: remote.categories,
+      items: remote.items.map(ri => {
+        const li = localById[ri.id];
+        const base = { id: ri.id, name: ri.title||ri.name||'', category_id: ri.category_id||null, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: ri.proficiency||0, trust_flag: ri.trust_flag||'✅', ease_factor: ri.ease_factor||2.5, interval_days: ri.interval_days||ri.interval||1, repetitions: ri.repetitions||0, next_review_date: ri.next_review_date||ri.next_review||null, related_item_ids: ri.related_item_ids||[], attachments: ri.attachments||[], created_at: ri.created_at||'' };
+        if (li) return { ...base, proficiency: li.proficiency||base.proficiency, trust_flag: li.trust_flag||base.trust_flag, ease_factor: li.ease_factor||base.ease_factor, interval_days: li.interval_days||base.interval_days, repetitions: li.repetitions||base.repetitions, next_review_date: li.next_review_date||base.next_review_date };
+        return base;
+      }),
+      nextId: { categories: maxCatId + 1, items: maxItemId + 1 }
+    };
+    vWriteLocal(merged); vRefreshCats(); vLoadRandomCards(); renderDashboardReviews();
+  }
+
+  // ── VetSync Google Drive Sync ─────────────────────────────────────
+  const VetSync = (() => {
+    let tokenClient = null, accessToken = null, tokenExpiry = 0, cachedFileId = null;
+    let syncing = false, pendingUpload = false, hadAuth = false, silentRenewalPending = false;
+
+    function loadStored() {
+      try { const d = JSON.parse(localStorage.getItem(V_GDRIVE_TOKEN_KEY)||'null'); if (d && d.t && d.e > Date.now()) { accessToken = d.t; tokenExpiry = d.e; } } catch {}
+      cachedFileId = localStorage.getItem(V_GDRIVE_FILEID_KEY)||null;
+      hadAuth = !!localStorage.getItem(V_GDRIVE_AUTHED_KEY);
+    }
+    function storeToken(tok, expiresIn) {
+      accessToken = tok; tokenExpiry = Date.now() + (expiresIn - 60) * 1000; hadAuth = true;
+      localStorage.setItem(V_GDRIVE_TOKEN_KEY, JSON.stringify({ t: accessToken, e: tokenExpiry }));
+      localStorage.setItem(V_GDRIVE_AUTHED_KEY, '1');
+    }
+    function clearAuth() {
+      accessToken = null; tokenExpiry = 0; cachedFileId = null; hadAuth = false;
+      localStorage.removeItem(V_GDRIVE_TOKEN_KEY); localStorage.removeItem(V_GDRIVE_FILEID_KEY); localStorage.removeItem(V_GDRIVE_AUTHED_KEY);
+    }
+    function isAuthed() { return !!accessToken && Date.now() < tokenExpiry; }
+    function initGIS() {
+      if (!V_GDRIVE_CLIENT_ID || typeof google === 'undefined' || tokenClient) return;
+      tokenClient = google.accounts.oauth2.initTokenClient({ client_id: V_GDRIVE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file', callback: () => {} });
+    }
+    function requestToken(prompt) {
+      return new Promise((resolve, reject) => {
+        initGIS(); if (!tokenClient) { reject(new Error('GIS tokenClient 未初期化')); return; }
+        const timer = prompt === '' ? setTimeout(() => reject(new Error('timeout')), 15000) : null;
+        tokenClient.callback = r => { if (timer) clearTimeout(timer); if (r.error) { reject(new Error(r.error)); return; } storeToken(r.access_token, r.expires_in); resolve(r.access_token); };
+        tokenClient.requestAccessToken({ prompt: prompt||'' });
+      });
+    }
+    async function getToken() { if (isAuthed()) return accessToken; return requestToken(''); }
+    async function tryAutoLogin() {
+      if (isAuthed()) return true; if (!navigator.onLine) return false;
+      try { await requestToken(''); return true; } catch (e) { if (e.message === 'access_denied') clearAuth(); return false; }
+    }
+    async function findFileId(token) {
+      if (cachedFileId) return cachedFileId;
+      const q = encodeURIComponent(`name='${V_GDRIVE_FILE_NAME}' and trashed=false`);
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&spaces=drive`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error('search_failed');
+      const { files } = await r.json();
+      if (files && files.length > 0) { cachedFileId = files[0].id; localStorage.setItem(V_GDRIVE_FILEID_KEY, cachedFileId); }
+      return cachedFileId;
+    }
+    async function upload(data) {
+      const token = await getToken(); const id = await findFileId(token); const body = JSON.stringify(data, null, 2);
+      if (id) {
+        const r = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body });
+        if (!r.ok) { cachedFileId = null; localStorage.removeItem(V_GDRIVE_FILEID_KEY); throw new Error('upload_failed'); }
+      } else {
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify({ name: V_GDRIVE_FILE_NAME, mimeType: 'application/json' })], { type: 'application/json' }));
+        form.append('media', new Blob([body], { type: 'application/json' }));
+        const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+        if (!r.ok) throw new Error('create_failed');
+        const { id: newId } = await r.json(); cachedFileId = newId; localStorage.setItem(V_GDRIVE_FILEID_KEY, newId);
+      }
+    }
+    async function download() {
+      const token = await getToken(); const id = await findFileId(token); if (!id) return null;
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error('download_failed'); return await r.json();
+    }
+    async function scheduleSyncToCloud() {
+      const s = vGetSettings(); if (!s.driveEnabled) return;
+      if (!isAuthed()) {
+        pendingUpload = true;
+        if (hadAuth && !silentRenewalPending) {
+          silentRenewalPending = true;
+          tryAutoLogin().then(ok => { silentRenewalPending = false; vUpdateDriveSettingsUI(); if (ok && pendingUpload) scheduleSyncToCloud(); });
+        }
+        return;
+      }
+      if (!navigator.onLine) { pendingUpload = true; vShowDriveSyncStatus('offline'); return; }
+      if (syncing) { pendingUpload = true; return; }
+      syncing = true; vShowSyncIndicator(true); let succeeded = false;
+      try { await upload(vGetData()); pendingUpload = false; vShowDriveSyncStatus('ok'); succeeded = true; }
+      catch { pendingUpload = true; vShowDriveSyncStatus('error'); }
+      finally { syncing = false; vShowSyncIndicator(false); if (succeeded && pendingUpload) scheduleSyncToCloud(); }
+    }
+    async function syncFromCloud() {
+      const s = vGetSettings(); if (!s.driveEnabled || !isAuthed() || !navigator.onLine) return;
+      vShowSyncIndicator(true);
+      try {
+        const data = await download();
+        if (data && data.categories && data.items) { vApplyCloudData(data); vShowDriveSyncStatus('ok'); }
+        else { await upload(vGetData()); vShowDriveSyncStatus('ok'); }
+      } catch { vShowDriveSyncStatus('error'); } finally { vShowSyncIndicator(false); }
+    }
+    async function signIn() {
+      try { await requestToken('select_account'); vUpdateDriveSettingsUI(); await syncFromCloud(); if (pendingUpload) await scheduleSyncToCloud(); }
+      catch { vUpdateDriveSettingsUI(); }
+    }
+    function signOut() {
+      if (accessToken && typeof google !== 'undefined') { try { google.accounts.oauth2.revoke(accessToken, () => {}); } catch {} }
+      clearAuth(); vUpdateDriveSettingsUI(); vShowDriveSyncStatus('');
+    }
+    async function onGISLoad() {
+      initGIS();
+      if (!isAuthed()) {
+        const ok = await tryAutoLogin();
+        if (ok) { const s = vGetSettings(); s.driveEnabled = true; vSaveSettings(s); vUpdateDriveSettingsUI(); if (navigator.onLine) { await syncFromCloud(); if (pendingUpload) await scheduleSyncToCloud(); } }
+        else { vUpdateDriveSettingsUI(); showDriveLoginPopup(); }
+      } else {
+        const s = vGetSettings(); s.driveEnabled = true; vSaveSettings(s); vUpdateDriveSettingsUI();
+        if (navigator.onLine) await syncFromCloud();
+      }
+    }
+    function init() { loadStored(); initGIS(); }
+    return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud };
+  })();
+
+  // ── VetSync Drive settings handlers ──────────────────────────────
+  document.getElementById('v-setting-drive-toggle').addEventListener('change', async e => {
+    const s = vGetSettings(); s.driveEnabled = e.target.checked; vSaveSettings(s); vUpdateDriveSettingsUI();
+    if (s.driveEnabled) { if (!VetSync.isAuthed()) await VetSync.signIn(); else await VetSync.syncFromCloud(); }
+  });
+  document.getElementById('v-drive-sign-in-btn').addEventListener('click', () => VetSync.signIn());
+  document.getElementById('v-drive-sign-out-btn').addEventListener('click', () => VetSync.signOut());
+  window.addEventListener('online', () => VetSync.flushPending());
+
+  // ════════════════════════════════════════════════════════════
+  // DRIVE LOGIN POPUP
+  // ════════════════════════════════════════════════════════════
+  function showDriveLoginPopup() {
+    document.getElementById('drive-login-popup-overlay').classList.add('open');
+  }
+  function hideDriveLoginPopup() {
+    document.getElementById('drive-login-popup-overlay').classList.remove('open');
+  }
+  document.getElementById('dlp-login-btn').addEventListener('click', async () => {
+    hideDriveLoginPopup();
+    const ts = tGetSettings(); ts.driveEnabled = true; tSaveSettings(ts);
+    const vs = vGetSettings(); vs.driveEnabled = true; vSaveSettings(vs);
+    await Promise.all([TaskSync.signIn(), VetSync.signIn()]);
+  });
+  document.getElementById('dlp-skip-btn').addEventListener('click', () => hideDriveLoginPopup());
+
+  // ════════════════════════════════════════════════════════════
+  // GIS CALLBACK + ONLINE HANDLER
+  // ════════════════════════════════════════════════════════════
+  window.onGoogleLibraryLoad = () => { TaskSync.onGISLoad(); VetSync.onGISLoad(); };
+  window.addEventListener('online', () => TaskSync.flushPending());
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data && e.data.type === 'SYNC_TASKS') TaskSync.flushPending();
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // INIT
+  // ════════════════════════════════════════════════════════════
+  TaskSync.init();
+  VetSync.init();
+  vRefreshCats();
+  renderTasks();
+  renderDashboard();
+  if (tGetSettings().notifyEnabled) tStartNotifTimer();
+  if (tGetSettings().driveEnabled && TaskSync.isAuthed() && navigator.onLine) TaskSync.syncFromCloud();
+  if (vGetSettings().driveEnabled && VetSync.isAuthed() && navigator.onLine) VetSync.syncFromCloud();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service_worker.js').catch(() => {});
+  }
+  </script>
+
+</body>
+</html>
