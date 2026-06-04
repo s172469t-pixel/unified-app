@@ -807,7 +807,7 @@
   <div id="drive-login-popup-overlay">
     <div id="drive-login-popup">
       <div class="dlp-icon">☁️</div>
-      <h3>Googleドライブと連携するとデータが同期されます</h3>
+      <h3>Googleドライブと連携するとタスクと学習データが同期されます</h3>
       <button id="dlp-login-btn">ログインして連携する</button>
       <button id="dlp-skip-btn">今はしない</button>
     </div>
@@ -1730,17 +1730,25 @@
     el.textContent = msg[status] || '';
   }
   function tUpdateDriveUI() {
-    const s = tGetSettings();
-    const toggle = document.getElementById('t-setting-drive-toggle');
-    const subrow = document.getElementById('t-setting-drive-subrow');
-    if (!toggle || !subrow) return;
-    toggle.checked = s.driveEnabled;
-    subrow.style.display = s.driveEnabled ? 'block' : 'none';
-    if (!s.driveEnabled) return;
-    const authed = TaskSync.isAuthed();
-    document.getElementById('t-drive-signin-area').style.display  = authed ? 'none'  : 'block';
-    document.getElementById('t-drive-account-area').style.display = authed ? 'block' : 'none';
-    if (authed) document.getElementById('t-drive-account-status').textContent = '✓ Googleアカウント接続中';
+    const enabled = getDriveEnabled();
+    const authed = (typeof TaskSync !== 'undefined' && TaskSync.isAuthed()) ||
+                   (typeof VetSync  !== 'undefined' && VetSync.isAuthed());
+    for (const id of ['t-setting-drive-toggle', 'v-setting-drive-toggle']) {
+      const el = document.getElementById(id); if (el) el.checked = enabled;
+    }
+    for (const id of ['t-setting-drive-subrow', 'v-setting-drive-subrow']) {
+      const el = document.getElementById(id); if (el) el.style.display = enabled ? 'block' : 'none';
+    }
+    if (!enabled) return;
+    for (const id of ['t-drive-signin-area', 'v-drive-signin-area']) {
+      const el = document.getElementById(id); if (el) el.style.display = authed ? 'none' : 'block';
+    }
+    for (const id of ['t-drive-account-area', 'v-drive-account-area']) {
+      const el = document.getElementById(id); if (el) el.style.display = authed ? 'block' : 'none';
+    }
+    if (authed) for (const id of ['t-drive-account-status', 'v-drive-account-status']) {
+      const el = document.getElementById(id); if (el) el.textContent = '✓ Googleアカウント接続中';
+    }
   }
 
   document.getElementById('t-setting-notify-toggle').addEventListener('change', e => {
@@ -1952,6 +1960,24 @@
   });
 
   // ════════════════════════════════════════════════════════════
+  // SHARED DRIVE ENABLED STATE
+  // ════════════════════════════════════════════════════════════
+  const DRIVE_SETTINGS_KEY = 'app_drive_settings';
+  function getDriveEnabled() {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRIVE_SETTINGS_KEY) || 'null');
+      if (d !== null) return !!d.enabled;
+      // Migrate from legacy per-sync settings
+      const ts = tLoadSettings();
+      const vs = JSON.parse(localStorage.getItem(V_SETTINGS_KEY) || '{}');
+      return !!(ts.driveEnabled || vs.driveEnabled);
+    } catch { return false; }
+  }
+  function setDriveEnabled(v) {
+    localStorage.setItem(DRIVE_SETTINGS_KEY, JSON.stringify({ enabled: !!v }));
+  }
+
+  // ════════════════════════════════════════════════════════════
   // TASKS: GOOGLE DRIVE SYNC (TaskSync)
   // ════════════════════════════════════════════════════════════
   const TaskSync = (() => {
@@ -2048,8 +2074,7 @@
     }
 
     async function scheduleSyncToCloud() {
-      const s = tGetSettings();
-      if (!s.driveEnabled) return;
+      if (!getDriveEnabled()) return;
       if (!isAuthed()) {
         pendingUpload = true;
         if (!silentRenewalPending) {
@@ -2074,8 +2099,7 @@
       }
     }
     async function syncFromCloud() {
-      const s = tGetSettings();
-      if (!s.driveEnabled || !isAuthed() || !navigator.onLine) return;
+      if (!getDriveEnabled() || !isAuthed() || !navigator.onLine) return;
       tShowSyncIndicator(true);
       try {
         const data = await download();
@@ -2106,16 +2130,15 @@
       initGIS();
       const ok = await tryAutoLogin();
       if (ok) {
-        const s = tGetSettings(); s.driveEnabled = true; tSaveSettings(s);
-        tUpdateDriveUI();
+        setDriveEnabled(true); tUpdateDriveUI();
         if (navigator.onLine) {
           await syncFromCloud();
           if (pendingUpload) await scheduleSyncToCloud();
         }
       } else {
         tUpdateDriveUI();
-        showDriveLoginPopup();
       }
+      return ok;
     }
 
     function init() { loadStored(); initGIS(); }
@@ -2123,17 +2146,24 @@
     return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud };
   })();
 
-  // Drive settings handlers
-  document.getElementById('t-setting-drive-toggle').addEventListener('change', async e => {
-    const s = tGetSettings(); s.driveEnabled = e.target.checked; tSaveSettings(s);
-    tUpdateDriveUI();
-    if (s.driveEnabled) {
-      if (!TaskSync.isAuthed()) await TaskSync.signIn();
-      else await TaskSync.syncFromCloud();
+  // ── Unified Drive toggle / sign-in / sign-out handlers ──────────
+  async function handleDriveToggle(enabled) {
+    setDriveEnabled(enabled); tUpdateDriveUI();
+    if (enabled) {
+      if (!TaskSync.isAuthed() || !VetSync.isAuthed()) {
+        await Promise.all([TaskSync.signIn(), VetSync.signIn()]);
+      } else {
+        await Promise.all([TaskSync.syncFromCloud(), VetSync.syncFromCloud()]);
+      }
     }
+  }
+  document.getElementById('t-setting-drive-toggle').addEventListener('change', e => handleDriveToggle(e.target.checked));
+  document.getElementById('t-drive-sign-in-btn').addEventListener('click', async () => {
+    await Promise.all([TaskSync.signIn(), VetSync.signIn()]); tUpdateDriveUI();
   });
-  document.getElementById('t-drive-sign-in-btn').addEventListener('click',  () => TaskSync.signIn());
-  document.getElementById('t-drive-sign-out-btn').addEventListener('click', () => TaskSync.signOut());
+  document.getElementById('t-drive-sign-out-btn').addEventListener('click', () => {
+    TaskSync.signOut(); VetSync.signOut(); setDriveEnabled(false); tUpdateDriveUI();
+  });
 
   // ════════════════════════════════════════════════════════════
   // TASKS: PULL-TO-REFRESH
@@ -2181,8 +2211,7 @@
       ptrLoading = true;
       tPtrWrap.classList.remove('ptr-ready'); tPtrWrap.classList.add('ptr-loading');
       tPtrWrap.style.transition = 'transform 0.15s ease'; ptrSetY(0);
-      const s = tGetSettings();
-      if (s.driveEnabled && TaskSync.isAuthed() && navigator.onLine) await TaskSync.syncFromCloud();
+      if (getDriveEnabled() && TaskSync.isAuthed() && navigator.onLine) await TaskSync.syncFromCloud();
       else renderTasks();
       await new Promise(r => setTimeout(r, 400));
       ptrLoading = false; ptrSnapBack();
@@ -3163,16 +3192,7 @@
     const msg = { ok: '✓ 同期完了', error: '⚠ 同期エラー（次回再試行）', offline: '📶 オフライン中' };
     el.textContent = msg[status] || '';
   }
-  function vUpdateDriveSettingsUI() {
-    const s = vGetSettings(); const toggle = document.getElementById('v-setting-drive-toggle'); const subrow = document.getElementById('v-setting-drive-subrow');
-    if (!toggle || !subrow) return;
-    toggle.checked = s.driveEnabled; subrow.style.display = s.driveEnabled ? 'block' : 'none';
-    if (!s.driveEnabled) return;
-    const authed = VetSync.isAuthed();
-    document.getElementById('v-drive-signin-area').style.display  = authed ? 'none'  : 'block';
-    document.getElementById('v-drive-account-area').style.display = authed ? 'block' : 'none';
-    if (authed) document.getElementById('v-drive-account-status').textContent = '✓ Googleアカウント接続中';
-  }
+  function vUpdateDriveSettingsUI() { tUpdateDriveUI(); }
 
   function vApplyCloudData(remote) {
     if (!remote || !remote.categories || !remote.items) return;
@@ -3259,7 +3279,7 @@
       if (!r.ok) throw new Error('download_failed'); return await r.json();
     }
     async function scheduleSyncToCloud() {
-      const s = vGetSettings(); if (!s.driveEnabled) return;
+      if (!getDriveEnabled()) return;
       if (!isAuthed()) {
         pendingUpload = true;
         if (hadAuth && !silentRenewalPending) {
@@ -3276,7 +3296,7 @@
       finally { syncing = false; vShowSyncIndicator(false); if (succeeded && pendingUpload) scheduleSyncToCloud(); }
     }
     async function syncFromCloud() {
-      const s = vGetSettings(); if (!s.driveEnabled || !isAuthed() || !navigator.onLine) return;
+      if (!getDriveEnabled() || !isAuthed() || !navigator.onLine) return;
       vShowSyncIndicator(true);
       try {
         const data = await download();
@@ -3296,24 +3316,26 @@
       initGIS();
       if (!isAuthed()) {
         const ok = await tryAutoLogin();
-        if (ok) { const s = vGetSettings(); s.driveEnabled = true; vSaveSettings(s); vUpdateDriveSettingsUI(); if (navigator.onLine) { await syncFromCloud(); if (pendingUpload) await scheduleSyncToCloud(); } }
-        else { vUpdateDriveSettingsUI(); showDriveLoginPopup(); }
+        if (ok) { setDriveEnabled(true); vUpdateDriveSettingsUI(); if (navigator.onLine) { await syncFromCloud(); if (pendingUpload) await scheduleSyncToCloud(); } }
+        else { vUpdateDriveSettingsUI(); }
+        return ok;
       } else {
-        const s = vGetSettings(); s.driveEnabled = true; vSaveSettings(s); vUpdateDriveSettingsUI();
+        setDriveEnabled(true); vUpdateDriveSettingsUI();
         if (navigator.onLine) await syncFromCloud();
+        return true;
       }
     }
     function init() { loadStored(); initGIS(); }
     return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud };
   })();
 
-  // ── VetSync Drive settings handlers ──────────────────────────────
-  document.getElementById('v-setting-drive-toggle').addEventListener('change', async e => {
-    const s = vGetSettings(); s.driveEnabled = e.target.checked; vSaveSettings(s); vUpdateDriveSettingsUI();
-    if (s.driveEnabled) { if (!VetSync.isAuthed()) await VetSync.signIn(); else await VetSync.syncFromCloud(); }
+  document.getElementById('v-setting-drive-toggle').addEventListener('change', e => handleDriveToggle(e.target.checked));
+  document.getElementById('v-drive-sign-in-btn').addEventListener('click', async () => {
+    await Promise.all([TaskSync.signIn(), VetSync.signIn()]); tUpdateDriveUI();
   });
-  document.getElementById('v-drive-sign-in-btn').addEventListener('click', () => VetSync.signIn());
-  document.getElementById('v-drive-sign-out-btn').addEventListener('click', () => VetSync.signOut());
+  document.getElementById('v-drive-sign-out-btn').addEventListener('click', () => {
+    TaskSync.signOut(); VetSync.signOut(); setDriveEnabled(false); tUpdateDriveUI();
+  });
   window.addEventListener('online', () => VetSync.flushPending());
 
   // ════════════════════════════════════════════════════════════
@@ -3327,16 +3349,19 @@
   }
   document.getElementById('dlp-login-btn').addEventListener('click', async () => {
     hideDriveLoginPopup();
-    const ts = tGetSettings(); ts.driveEnabled = true; tSaveSettings(ts);
-    const vs = vGetSettings(); vs.driveEnabled = true; vSaveSettings(vs);
+    setDriveEnabled(true); tUpdateDriveUI();
     await Promise.all([TaskSync.signIn(), VetSync.signIn()]);
+    tUpdateDriveUI();
   });
   document.getElementById('dlp-skip-btn').addEventListener('click', () => hideDriveLoginPopup());
 
   // ════════════════════════════════════════════════════════════
   // GIS CALLBACK + ONLINE HANDLER
   // ════════════════════════════════════════════════════════════
-  window.onGoogleLibraryLoad = () => { TaskSync.onGISLoad(); VetSync.onGISLoad(); };
+  window.onGoogleLibraryLoad = async () => {
+    const [taskOk, vetOk] = await Promise.all([TaskSync.onGISLoad(), VetSync.onGISLoad()]);
+    if (!taskOk && !vetOk) showDriveLoginPopup();
+  };
   window.addEventListener('online', () => TaskSync.flushPending());
   if (navigator.serviceWorker) {
     navigator.serviceWorker.addEventListener('message', e => {
