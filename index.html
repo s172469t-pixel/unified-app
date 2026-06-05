@@ -826,19 +826,70 @@
     }
     #v-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     #v-img-popup {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 950;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2100;
       display: flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none; transition: opacity 0.2s;
     }
     #v-img-popup.open { opacity: 1; pointer-events: auto; }
     #v-img-popup-close {
-      position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+      position: absolute; top: calc(16px + var(--safe-top)); left: 16px; width: 44px; height: 44px; border-radius: 50%;
       background: rgba(255,255,255,0.2); color: white; border: none; font-size: 24px; cursor: pointer;
-      z-index: 951; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;
+      z-index: 2101; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;
     }
     #v-img-popup-close:active { background: rgba(255,255,255,0.35); }
+    #v-img-popup-tag-btn {
+      position: absolute; right: 16px; bottom: calc(20px + var(--safe-bottom));
+      background: rgba(255,255,255,0.2); color: white; border: none;
+      border-radius: 22px; padding: 10px 16px; font-size: 14px; font-weight: 600;
+      cursor: pointer; -webkit-tap-highlight-color: transparent; z-index: 2101;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #v-img-popup-tag-btn:active { background: rgba(255,255,255,0.35); }
     #v-img-popup-inner { touch-action: none; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; }
     #v-img-popup-img { max-width: 100vw; max-height: 100vh; object-fit: contain; user-select: none; -webkit-user-select: none; border-radius: 4px; transform-origin: center center; will-change: transform; }
+    /* Tag editor */
+    #v-tag-editor-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 2500; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+      display: flex; align-items: flex-end;
+    }
+    #v-tag-editor-overlay.open { opacity: 1; pointer-events: auto; }
+    #v-tag-editor {
+      background: var(--bg); border-radius: 20px 20px 0 0; width: 100%;
+      padding: 20px 16px; padding-bottom: calc(20px + var(--safe-bottom));
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    #v-tag-editor-overlay.open #v-tag-editor { transform: translateY(0); }
+    #v-tag-editor-title { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
+    #v-tag-editor-chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 32px; margin-bottom: 12px; }
+    .v-tag-chip { display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--accent-tint); border-radius: 20px; font-size: 13px; color: var(--accent); }
+    .v-tag-chip-del { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 16px; line-height: 1; padding: 0 2px; -webkit-tap-highlight-color: transparent; }
+    #v-tag-editor-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    #v-tag-editor-input { flex: 1; height: 40px; border: 1.5px solid var(--divider); border-radius: 10px; padding: 0 12px; font-size: 14px; background: var(--card); color: var(--text); outline: none; font-family: inherit; }
+    #v-tag-editor-input:focus { border-color: var(--accent); }
+    #v-tag-editor-add-btn { height: 40px; padding: 0 16px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    #v-tag-editor-btn-row { display: flex; gap: 10px; }
+    #v-tag-editor-cancel { flex: 1; padding: 14px; background: var(--toggle-track); color: var(--text); border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    #v-tag-editor-save { flex: 1; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    /* Image gallery screen */
+    #v-gallery-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(80px + var(--safe-bottom)); }
+    .v-gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+    .v-gallery-item { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; aspect-ratio: 1; background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .v-gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .v-gallery-item-tags { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.6)); padding: 12px 6px 6px; }
+    .v-gallery-tag { font-size: 10px; color: rgba(255,255,255,0.9); display: inline-block; margin-right: 3px; }
+    .v-gallery-cb { position: absolute; top: 6px; left: 6px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid white; background: rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; }
+    .v-gallery-cb.checked { background: var(--accent); border-color: var(--accent); }
+    .v-gallery-cb.checked::after { content: ''; display: block; width: 5px; height: 9px; border-right: 2px solid white; border-bottom: 2px solid white; transform: rotate(45deg) translate(-1px,-1px); }
+    #v-gallery-body.select-mode .v-gallery-cb { display: flex; }
+    #v-gallery-delete-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom)); background: var(--bar-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--divider); transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 1; }
+    #v-gallery-delete-bar.visible { transform: translateY(0); }
+    #v-gallery-delete-btn { width: 100%; background: var(--danger); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    #v-gallery-delete-btn:active { opacity: 0.85; }
+    #v-gallery-fab { position: absolute; right: 20px; bottom: calc(20px + var(--safe-bottom)); width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; font-size: 28px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; -webkit-tap-highlight-color: transparent; transition: transform 0.15s; }
+    #v-gallery-fab:active { transform: scale(0.92); }
+    .v-gallery-empty { text-align: center; padding: 60px 20px; color: var(--sub); font-size: 15px; }
+    .v-detail-img-add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--bg); border-radius: 10px; font-size: 14px; color: var(--accent); cursor: pointer; border: 1.5px dashed var(--accent); -webkit-tap-highlight-color: transparent; margin-top: 8px; border-width: 1.5px; }
     #v-confirm-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 800;
       display: flex; align-items: center; justify-content: center;
@@ -1228,6 +1279,7 @@
       <div class="drawer-header">メニュー</div>
       <ul class="drawer-menu">
         <li><a href="#" id="v-menu-categories"><span class="icon">📚</span>項目一覧</a></li>
+        <li><a href="#" id="v-menu-images"><span class="icon">🖼️</span>画像管理</a></li>
         <li><a href="#" id="v-menu-settings"><span class="icon">⚙️</span>設定・インポート</a></li>
       </ul>
     </nav>
@@ -1347,12 +1399,6 @@
             <textarea class="form-textarea" id="v-edit-notes" placeholder="その他のメモ"></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label">画像添付</label>
-            <div class="v-attach-list" id="v-attach-preview-list"></div>
-            <button type="button" class="v-attach-add-label" id="v-attach-add-btn">📷 画像を追加</button>
-            <input type="file" id="v-attach-input" accept="image/*" multiple style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
-          </div>
-          <div class="form-group">
             <label class="form-label">関連タグ</label>
             <div class="v-related-edit-wrap">
               <div class="v-related-chips" id="v-related-chips"></div>
@@ -1432,7 +1478,45 @@
       <div id="v-img-popup-inner">
         <img id="v-img-popup-img" alt="">
       </div>
+      <button id="v-img-popup-tag-btn" aria-label="タグ編集">🏷 タグ編集</button>
     </div>
+
+    <!-- Gallery screen -->
+    <div id="v-img-gallery-screen" class="sub-screen">
+      <header class="sub-header">
+        <button class="back-btn" id="v-gallery-back-btn" aria-label="戻る">‹</button>
+        <h2 class="sub-title">画像管理</h2>
+        <button class="icon-btn" id="v-gallery-select-btn" style="font-size:13px;padding:0 8px;">選択</button>
+      </header>
+      <div id="v-gallery-body">
+        <div class="v-gallery-grid" id="v-gallery-grid"></div>
+        <div class="v-gallery-empty" id="v-gallery-empty" style="display:none">画像がありません</div>
+      </div>
+      <div id="v-gallery-delete-bar">
+        <button id="v-gallery-delete-btn">削除</button>
+      </div>
+      <button class="v-gallery-fab" id="v-gallery-fab" aria-label="画像を追加">＋</button>
+      <input type="file" id="v-gallery-file-input" accept="image/*" multiple style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
+    </div>
+
+    <!-- Tag editor overlay -->
+    <div id="v-tag-editor-overlay">
+      <div id="v-tag-editor">
+        <div id="v-tag-editor-title">タグ編集</div>
+        <div id="v-tag-editor-chips"></div>
+        <div id="v-tag-editor-input-row">
+          <input id="v-tag-editor-input" type="text" placeholder="新しいタグ">
+          <button id="v-tag-editor-add-btn">追加</button>
+        </div>
+        <div id="v-tag-editor-btn-row">
+          <button id="v-tag-editor-cancel">キャンセル</button>
+          <button id="v-tag-editor-save">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail file input -->
+    <input type="file" id="v-detail-file-input" accept="image/*" multiple style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
 
     <!-- Confirm dialog -->
     <div id="v-confirm-overlay">
@@ -2453,14 +2537,65 @@
   function vGetData() {
     try {
       const raw = localStorage.getItem(V_STORAGE_KEY);
-      if (!raw) return { categories: [], items: [], nextId: { categories: 1, items: 1 } };
+      if (!raw) return { categories: [], items: [], images: [], nextId: { categories: 1, items: 1 } };
       const d = JSON.parse(raw);
       if (!d.nextId) d.nextId = { categories: 1, items: 1 };
+      if (!d.images) d.images = [];
       return d;
-    } catch { return { categories: [], items: [], nextId: { categories: 1, items: 1 } }; }
+    } catch { return { categories: [], items: [], images: [], nextId: { categories: 1, items: 1 } }; }
   }
   function vWriteLocal(data) { localStorage.setItem(V_STORAGE_KEY, JSON.stringify(data)); }
   function vSaveData(data) { vWriteLocal(data); VetSync.scheduleSyncToCloud(); }
+
+  let v_imgIdSeq = Date.now();
+  function vGenImgId() { return 'img_' + (v_imgIdSeq++); }
+
+  function vGetImages() { return vGetData().images || []; }
+
+  function vAddImage(base64data, tags) {
+    const data = vGetData();
+    const img = { id: vGenImgId(), data: base64data, tags: tags || [], created_at: new Date().toISOString() };
+    data.images.push(img);
+    vSaveData(data);
+    return img;
+  }
+
+  function vUpdateImageTags(imgId, tags) {
+    const data = vGetData();
+    const img = data.images.find(i => i.id === imgId);
+    if (img) { img.tags = tags; vSaveData(data); }
+  }
+
+  function vDeleteImages(ids) {
+    const set = new Set(ids);
+    const data = vGetData();
+    data.images = data.images.filter(i => !set.has(i.id));
+    vSaveData(data);
+  }
+
+  function vGetImagesForItem(itemId) {
+    const data = vGetData();
+    const item = (data.items || []).find(i => i.id === itemId);
+    if (!item) return [];
+    const tag = '#' + (item.name || '').trim().toLowerCase();
+    return (data.images || []).filter(img => img.tags.some(t => t.toLowerCase() === tag));
+  }
+
+  function vMigrateAttachments() {
+    const data = vGetData();
+    let migrated = false;
+    (data.items || []).forEach(item => {
+      if (!item.attachments || item.attachments.length === 0) return;
+      const tag = '#' + (item.name || '').trim().toLowerCase();
+      item.attachments.forEach(att => {
+        if (!att.data) return;
+        data.images.push({ id: vGenImgId(), data: att.data, tags: [tag], created_at: new Date().toISOString() });
+      });
+      delete item.attachments;
+      migrated = true;
+    });
+    if (migrated) vSaveData(data);
+  }
 
   function vAllocId(data, type) {
     if (!data.nextId) data.nextId = { categories: 1, items: 1 };
@@ -2583,7 +2718,6 @@
       notes:                 payload.notes !== undefined ? payload.notes : (item.notes||''),
       trust_flag:            payload.trust_flag !== undefined ? payload.trust_flag : (item.trust_flag||'✅'),
       related_item_ids:      payload.related_tag_ids !== undefined ? payload.related_tag_ids : (item.related_item_ids||[]),
-      attachments:           payload.attachments !== undefined ? payload.attachments : (item.attachments||[]),
     };
     vSaveData(data); return true;
   }
@@ -2961,17 +3095,22 @@
       relSec.appendChild(chips); wrap.appendChild(relSec);
     }
 
-    const imgAtts = (item.attachments||[]).filter(a => a.data);
-    if (imgAtts.length) {
-      const attSec = document.createElement('div'); attSec.className = 'v-detail-section';
-      attSec.innerHTML = `<div class="v-detail-section-title">添付画像</div>`;
-      imgAtts.forEach(a => {
-        const img = document.createElement('img'); img.className = 'v-detail-attach-img';
-        img.src = a.data; img.alt = esc(a.filename||'');
-        img.addEventListener('click', () => vOpenImgPopup(a.data)); attSec.appendChild(img);
-      });
-      wrap.appendChild(attSec);
-    }
+    const tagImgs = vGetImagesForItem(itemId);
+    const imgSec = document.createElement('div'); imgSec.className = 'v-detail-section';
+    imgSec.innerHTML = `<div class="v-detail-section-title">添付画像</div>`;
+    tagImgs.forEach(imgObj => {
+      const img = document.createElement('img'); img.className = 'v-detail-attach-img';
+      img.src = imgObj.data; img.alt = '';
+      img.addEventListener('click', () => vOpenImgPopup(imgObj.id)); imgSec.appendChild(img);
+    });
+    const addImgBtn = document.createElement('button'); addImgBtn.className = 'v-detail-img-add-btn';
+    addImgBtn.textContent = '＋ 画像を追加';
+    addImgBtn.addEventListener('click', () => {
+      v_detailItemId = itemId;
+      document.getElementById('v-detail-file-input').click();
+    });
+    imgSec.appendChild(addImgBtn);
+    wrap.appendChild(imgSec);
 
     const editBtn = document.createElement('button'); editBtn.className = 'v-detail-edit-btn'; editBtn.textContent = '編集';
     editBtn.addEventListener('click', () => vOpenEdit(itemId, item.category_id)); wrap.appendChild(editBtn);
@@ -2992,19 +3131,6 @@
   // ── Edit screen ───────────────────────────────────────────────────
   let v_editState = {};
 
-  function vRenderAttachList() {
-    const wrap = document.getElementById('v-attach-preview-list'); wrap.innerHTML = '';
-    (v_editState.attachments||[]).forEach((att, idx) => {
-      if (!att.data) return;
-      const thumbWrap = document.createElement('div'); thumbWrap.className = 'v-attach-thumb-wrap';
-      const img = document.createElement('img'); img.className = 'v-attach-thumb'; img.src = att.data;
-      const del = document.createElement('button'); del.className = 'v-attach-del-btn'; del.textContent = '×';
-      del.addEventListener('click', e => { e.preventDefault(); v_editState.attachments.splice(idx, 1); vRenderAttachList(); });
-      thumbWrap.appendChild(img); thumbWrap.appendChild(del); wrap.appendChild(thumbWrap);
-    });
-  }
-
-  document.getElementById('v-attach-add-btn').addEventListener('click', () => document.getElementById('v-attach-input').click());
 
   function vCompressImage(file) {
     return new Promise((resolve, reject) => {
@@ -3024,21 +3150,15 @@
     });
   }
 
-  document.getElementById('v-attach-input').addEventListener('change', function() {
-    const files = [...this.files]; this.value = '';
-    Promise.all(files.map(vCompressImage)).then(results => { v_editState.attachments.push(...results); vRenderAttachList(); })
-      .catch(() => vToast('画像の読み込みに失敗しました'));
-  });
 
   function vOpenEdit(itemId, defaultCatId) {
-    v_editState = { isNew: itemId === null, itemId, relatedTagIds: [], attachments: [] };
+    v_editState = { isNew: itemId === null, itemId, relatedTagIds: [] };
     document.getElementById('v-edit-screen-title').textContent = itemId ? '編集' : '新規追加';
     ['v-edit-name','v-edit-definition','v-edit-normal','v-edit-clinical','v-edit-diseases','v-edit-notes'].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('v-related-chips').innerHTML = '';
     document.getElementById('v-related-search').value = '';
     document.getElementById('v-related-dropdown').classList.remove('open');
     document.getElementById('v-related-dropdown').innerHTML = '';
-    vRenderAttachList();
     for (let l = 1; l <= 4; l++) {
       document.getElementById(`v-cat-sel-${l}`).innerHTML = '';
       if (l > 1) document.getElementById(`v-cat-lv${l}-wrap`).style.display = 'none';
@@ -3054,8 +3174,7 @@
         document.getElementById('v-edit-diseases').value   = item.related_diseases||'';
         document.getElementById('v-edit-notes').value      = item.notes||'';
         v_editState.relatedTagIds = item.related_item_ids||[];
-        v_editState.attachments   = (item.attachments||[]).filter(a => a.data);
-        vRenderRelatedChips(item.related_tags); vRenderAttachList();
+        vRenderRelatedChips(item.related_tags);
         if (item.category_id) vSetCatCascadeById(item.category_id);
       }
     } else if (defaultCatId) { vSetCatCascadeById(defaultCatId); }
@@ -3182,7 +3301,6 @@
       related_diseases:      document.getElementById('v-edit-diseases').value.trim(),
       notes:                 document.getElementById('v-edit-notes').value.trim(),
       related_tag_ids:       v_editState.relatedTagIds,
-      attachments:           v_editState.attachments||[],
     };
     let itemId = v_editState.itemId;
     try {
@@ -3241,17 +3359,25 @@
       if (existingItemNames.has(rawName)) { skipped++; }
       else {
         const newId = data.nextId.items++; const catId = ri.category_id != null ? (catIdMap[ri.category_id]??null) : null;
-        data.items.push({ id: newId, name: rawName, category_id: catId, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: 0, trust_flag: '✅', ease_factor: 2.5, interval_days: 1, repetitions: 0, next_review_date: today, related_item_ids: [], attachments: ri.attachments||[], created_at: ri.created_at||today });
+        data.items.push({ id: newId, name: rawName, category_id: catId, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: 0, trust_flag: '✅', ease_factor: 2.5, interval_days: 1, repetitions: 0, next_review_date: today, related_item_ids: [], created_at: ri.created_at||today });
         existingItemNames.add(rawName); added++;
       }
     });
+    if (remote.images && Array.isArray(remote.images)) {
+      const existingIds = new Set(data.images.map(i => i.id));
+      remote.images.forEach(ri => {
+        if (!ri.id || existingIds.has(ri.id)) return;
+        data.images.push({ id: ri.id, data: ri.data||'', tags: ri.tags||[], created_at: ri.created_at||today });
+        existingIds.add(ri.id);
+      });
+    }
     vWriteLocal(data); vRefreshCats(); vRefreshDataStats(); vLoadRandomCards(); renderDashboardReviews();
     vToast(`${added}件追加、${skipped}件スキップ`); VetSync.scheduleSyncToCloud();
   }
 
   document.getElementById('v-export-btn').addEventListener('click', () => {
     const data = vGetData();
-    const payload = { categories: data.categories, items: data.items.map(i => ({ id: i.id, title: i.name||i.title||'', main_tag: '#'+(i.name||i.title||''), category_id: i.category_id, definition: i.definition||'', normal_values: i.normal_values||'', clinical_significance: i.clinical_significance||'', related_diseases: i.related_diseases||'', notes: i.notes||'', proficiency: i.proficiency||0, trust_flag: i.trust_flag||'✅', tags: [], attachments: i.attachments||[], next_review: i.next_review_date||i.next_review||null, ease_factor: i.ease_factor||2.5, interval: i.interval_days||i.interval||1, repetitions: i.repetitions||0, related_item_ids: i.related_item_ids||[], created_at: i.created_at||'' })) };
+    const payload = { categories: data.categories, items: data.items.map(i => ({ id: i.id, title: i.name||i.title||'', main_tag: '#'+(i.name||i.title||''), category_id: i.category_id, definition: i.definition||'', normal_values: i.normal_values||'', clinical_significance: i.clinical_significance||'', related_diseases: i.related_diseases||'', notes: i.notes||'', proficiency: i.proficiency||0, trust_flag: i.trust_flag||'✅', tags: [], next_review: i.next_review_date||i.next_review||null, ease_factor: i.ease_factor||2.5, interval: i.interval_days||i.interval||1, repetitions: i.repetitions||0, related_item_ids: i.related_item_ids||[], created_at: i.created_at||'' })), images: data.images||[] };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob); const a = document.createElement('a');
     a.href = url; a.download = 'vetlearn_data.json'; a.click(); URL.revokeObjectURL(url); vToast('JSONをダウンロードしました');
@@ -3300,10 +3426,187 @@
     return { reset };
   })();
 
-  function vOpenImgPopup(src) { v_popup.reset(); document.getElementById('v-img-popup-img').src = src; document.getElementById('v-img-popup').classList.add('open'); }
-  function vCloseImgPopup() { document.getElementById('v-img-popup').classList.remove('open'); v_popup.reset(); document.getElementById('v-img-popup-img').src = ''; }
+  let v_popupImgId = null;
+  let v_detailItemId = null;
+
+  function vOpenImgPopup(imgId) {
+    const images = vGetImages();
+    const imgObj = images.find(i => i.id === imgId);
+    if (!imgObj) return;
+    v_popupImgId = imgId;
+    v_popup.reset();
+    document.getElementById('v-img-popup-img').src = imgObj.data;
+    document.getElementById('v-img-popup').classList.add('open');
+  }
+  function vCloseImgPopup() {
+    document.getElementById('v-img-popup').classList.remove('open');
+    v_popup.reset();
+    document.getElementById('v-img-popup-img').src = '';
+    v_popupImgId = null;
+  }
   document.getElementById('v-img-popup').addEventListener('click', e => { if (e.target === document.getElementById('v-img-popup')) vCloseImgPopup(); });
   document.getElementById('v-img-popup-close').addEventListener('click', vCloseImgPopup);
+  document.getElementById('v-img-popup-tag-btn').addEventListener('click', () => {
+    if (v_popupImgId) vOpenTagEditor(v_popupImgId);
+  });
+
+  // ── Tag editor ────────────────────────────────────────────────────
+  let v_tagEditorImgId = null;
+  let v_tagEditorTags = [];
+
+  function vOpenTagEditor(imgId) {
+    const images = vGetImages();
+    const imgObj = images.find(i => i.id === imgId);
+    if (!imgObj) return;
+    v_tagEditorImgId = imgId;
+    v_tagEditorTags = [...(imgObj.tags || [])];
+    vRenderTagEditorChips();
+    document.getElementById('v-tag-editor-input').value = '';
+    document.getElementById('v-tag-editor-overlay').classList.add('open');
+  }
+
+  function vCloseTagEditor() {
+    document.getElementById('v-tag-editor-overlay').classList.remove('open');
+    v_tagEditorImgId = null;
+    v_tagEditorTags = [];
+  }
+
+  function vRenderTagEditorChips() {
+    const wrap = document.getElementById('v-tag-editor-chips'); wrap.innerHTML = '';
+    v_tagEditorTags.forEach((tag, idx) => {
+      const chip = document.createElement('span'); chip.className = 'v-tag-chip';
+      chip.textContent = tag;
+      const del = document.createElement('button'); del.className = 'v-tag-chip-del'; del.textContent = '×';
+      del.addEventListener('click', () => { v_tagEditorTags.splice(idx, 1); vRenderTagEditorChips(); });
+      chip.appendChild(del); wrap.appendChild(chip);
+    });
+  }
+
+  document.getElementById('v-tag-editor-add-btn').addEventListener('click', () => {
+    const inp = document.getElementById('v-tag-editor-input');
+    const val = inp.value.trim();
+    if (val && !v_tagEditorTags.includes(val)) { v_tagEditorTags.push(val); vRenderTagEditorChips(); }
+    inp.value = '';
+  });
+  document.getElementById('v-tag-editor-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('v-tag-editor-add-btn').click(); }
+  });
+  document.getElementById('v-tag-editor-cancel').addEventListener('click', vCloseTagEditor);
+  document.getElementById('v-tag-editor-save').addEventListener('click', () => {
+    if (v_tagEditorImgId) {
+      vUpdateImageTags(v_tagEditorImgId, v_tagEditorTags);
+      vCloseTagEditor();
+      if (document.getElementById('v-img-gallery-screen').classList.contains('open')) vRenderGallery();
+      vToast('タグを保存しました');
+    }
+  });
+
+  // ── Image gallery screen ──────────────────────────────────────────
+  let v_gallerySelected = new Set();
+
+  function vOpenImgGallery() {
+    v_gallerySelected = new Set();
+    document.getElementById('v-gallery-body').classList.remove('select-mode');
+    document.getElementById('v-gallery-delete-bar').classList.remove('show');
+    document.getElementById('v-gallery-select-btn').textContent = '選択';
+    vRenderGallery();
+    vNavigateTo('v-img-gallery-screen');
+  }
+
+  function vRenderGallery() {
+    const images = vGetImages();
+    const grid = document.getElementById('v-gallery-grid');
+    const empty = document.getElementById('v-gallery-empty');
+    grid.innerHTML = '';
+    if (images.length === 0) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    images.forEach(imgObj => {
+      const item = document.createElement('div'); item.className = 'v-gallery-item';
+      item.dataset.id = imgObj.id;
+      if (v_gallerySelected.has(imgObj.id)) item.classList.add('selected');
+      const img = document.createElement('img'); img.src = imgObj.data; img.alt = '';
+      img.addEventListener('click', () => {
+        if (document.getElementById('v-gallery-body').classList.contains('select-mode')) {
+          vGalleryToggleSelect(imgObj.id);
+        } else {
+          vOpenImgPopup(imgObj.id);
+        }
+      });
+      const tags = document.createElement('div'); tags.className = 'v-gallery-item-tags';
+      (imgObj.tags || []).forEach(t => {
+        const span = document.createElement('span'); span.className = 'v-gallery-tag'; span.textContent = t;
+        tags.appendChild(span);
+      });
+      const cb = document.createElement('div'); cb.className = 'v-gallery-cb';
+      cb.addEventListener('click', () => vGalleryToggleSelect(imgObj.id));
+      item.appendChild(img); item.appendChild(tags); item.appendChild(cb);
+      grid.appendChild(item);
+    });
+  }
+
+  function vGalleryToggleSelect(imgId) {
+    if (v_gallerySelected.has(imgId)) v_gallerySelected.delete(imgId);
+    else v_gallerySelected.add(imgId);
+    const item = document.querySelector(`.v-gallery-item[data-id="${imgId}"]`);
+    if (item) item.classList.toggle('selected', v_gallerySelected.has(imgId));
+    vUpdateGalleryDeleteBar();
+  }
+
+  function vUpdateGalleryDeleteBar() {
+    const bar = document.getElementById('v-gallery-delete-bar');
+    bar.classList.toggle('show', v_gallerySelected.size > 0);
+    document.getElementById('v-gallery-delete-btn').textContent = `削除（${v_gallerySelected.size}）`;
+  }
+
+  document.getElementById('v-gallery-back-btn').addEventListener('click', vNavigateBack);
+  document.getElementById('v-gallery-select-btn').addEventListener('click', () => {
+    const body = document.getElementById('v-gallery-body');
+    const isSelect = body.classList.toggle('select-mode');
+    document.getElementById('v-gallery-select-btn').textContent = isSelect ? 'キャンセル' : '選択';
+    if (!isSelect) {
+      v_gallerySelected = new Set();
+      document.querySelectorAll('.v-gallery-item').forEach(el => el.classList.remove('selected'));
+      vUpdateGalleryDeleteBar();
+    }
+  });
+  document.getElementById('v-gallery-delete-btn').addEventListener('click', () => {
+    if (v_gallerySelected.size === 0) return;
+    vDeleteImages([...v_gallerySelected]);
+    v_gallerySelected = new Set();
+    document.getElementById('v-gallery-body').classList.remove('select-mode');
+    document.getElementById('v-gallery-delete-bar').classList.remove('show');
+    document.getElementById('v-gallery-select-btn').textContent = '選択';
+    vRenderGallery();
+    vToast('削除しました');
+  });
+  document.getElementById('v-gallery-fab').addEventListener('click', () => document.getElementById('v-gallery-file-input').click());
+  document.getElementById('v-gallery-file-input').addEventListener('change', function() {
+    const files = [...this.files]; this.value = '';
+    Promise.all(files.map(vCompressImage)).then(results => {
+      results.forEach(r => vAddImage(r.data, []));
+      vRenderGallery();
+      vToast('追加しました');
+    }).catch(() => vToast('画像の読み込みに失敗しました'));
+  });
+
+  document.getElementById('v-menu-images').addEventListener('click', e => {
+    e.preventDefault(); vCloseDrawer(); vOpenImgGallery();
+  });
+
+  // ── Detail file input ─────────────────────────────────────────────
+  document.getElementById('v-detail-file-input').addEventListener('change', function() {
+    const files = [...this.files]; this.value = '';
+    const itemId = v_detailItemId;
+    if (!itemId) return;
+    const data = vGetData();
+    const item = (data.items || []).find(i => i.id === itemId);
+    const tag = item ? '#' + item.name.trim().toLowerCase() : '';
+    Promise.all(files.map(vCompressImage)).then(results => {
+      results.forEach(r => vAddImage(r.data, tag ? [tag] : []));
+      vRenderDetail(itemId);
+      vToast('追加しました');
+    }).catch(() => vToast('画像の読み込みに失敗しました'));
+  });
 
   // ── VetSync Drive helpers ─────────────────────────────────────────
   function vShowSyncIndicator(on) { document.getElementById('v-sync-indicator').classList.toggle('active', on); }
@@ -3324,10 +3627,11 @@
       categories: remote.categories,
       items: remote.items.map(ri => {
         const li = localById[ri.id];
-        const base = { id: ri.id, name: ri.title||ri.name||'', category_id: ri.category_id||null, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: ri.proficiency||0, trust_flag: ri.trust_flag||'✅', ease_factor: ri.ease_factor||2.5, interval_days: ri.interval_days||ri.interval||1, repetitions: ri.repetitions||0, next_review_date: ri.next_review_date||ri.next_review||null, related_item_ids: ri.related_item_ids||[], attachments: ri.attachments||[], created_at: ri.created_at||'' };
+        const base = { id: ri.id, name: ri.title||ri.name||'', category_id: ri.category_id||null, definition: ri.definition||'', normal_values: ri.normal_values||'', clinical_significance: ri.clinical_significance||'', related_diseases: ri.related_diseases||'', notes: ri.notes||'', proficiency: ri.proficiency||0, trust_flag: ri.trust_flag||'✅', ease_factor: ri.ease_factor||2.5, interval_days: ri.interval_days||ri.interval||1, repetitions: ri.repetitions||0, next_review_date: ri.next_review_date||ri.next_review||null, related_item_ids: ri.related_item_ids||[], created_at: ri.created_at||'' };
         if (li) return { ...base, proficiency: li.proficiency||base.proficiency, trust_flag: li.trust_flag||base.trust_flag, ease_factor: li.ease_factor||base.ease_factor, interval_days: li.interval_days||base.interval_days, repetitions: li.repetitions||base.repetitions, next_review_date: li.next_review_date||base.next_review_date };
         return base;
       }),
+      images: remote.images || local.images || [],
       nextId: { categories: maxCatId + 1, items: maxItemId + 1 }
     };
     vWriteLocal(merged); vRefreshCats(); vLoadRandomCards(); renderDashboardReviews();
@@ -3520,6 +3824,7 @@
   // ════════════════════════════════════════════════════════════
   TaskSync.init();
   VetSync.init();
+  vMigrateAttachments();
   vRefreshCats();
   renderTasks();
   renderDashboard();
