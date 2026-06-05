@@ -228,6 +228,25 @@
     }
     #db-date { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.1; }
     #db-weekday { font-size: 15px; color: var(--sub); margin-top: 4px; font-weight: 500; }
+    .quick-input-wrap {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px 10px;
+    }
+    .quick-input {
+      flex: 1; height: 38px; border: 1.5px solid rgba(0,0,0,0.12);
+      border-radius: 10px; padding: 0 12px; font-size: 14px;
+      background: var(--card); color: var(--text); outline: none;
+      -webkit-appearance: none;
+    }
+    .quick-input:focus { border-color: var(--accent); }
+    .quick-input-btn {
+      flex-shrink: 0; width: 38px; height: 38px;
+      background: var(--accent); color: white; border: none;
+      border-radius: 10px; font-size: 22px; font-weight: 400; line-height: 1;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .quick-input-btn:active { opacity: 0.82; }
     #db-body {
       padding-inline: 16px;
       padding-bottom: calc(80px + var(--safe-bottom));
@@ -839,6 +858,10 @@
       <div id="db-date">読み込み中...</div>
       <div id="db-weekday"></div>
     </div>
+    <div class="quick-input-wrap">
+      <input class="quick-input" id="db-quick-input" type="text" placeholder="タスクをすぐ追加..." autocomplete="off">
+      <button class="quick-input-btn" id="db-quick-btn" aria-label="追加">＋</button>
+    </div>
     <div id="db-body">
       <div class="db-section">
         <div class="db-section-label">📋 今日のタスク</div>
@@ -911,6 +934,10 @@
     <!-- Main -->
     <main id="t-main">
       <div class="section-label">優先タスク</div>
+      <div class="quick-input-wrap">
+        <input class="quick-input" id="t-quick-input" type="text" placeholder="タスクをすぐ追加..." autocomplete="off">
+        <button class="quick-input-btn" id="t-quick-btn" aria-label="追加">＋</button>
+      </div>
       <div class="task-list" id="t-priority-list"></div>
     </main>
 
@@ -1976,6 +2003,27 @@
       notifyHours:  tSelectedNotify,
       note:         document.getElementById('t-task-note').value.trim(),
     });
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // QUICK TASK INPUT
+  // ════════════════════════════════════════════════════════════
+  function quickAddTask(inputEl) {
+    const title = inputEl.value.trim();
+    if (!title) return;
+    addTask({ title, startIso: null, deadlineType: 'asap', deadlineIso: '', protect: false, notifyHours: 24, note: '' });
+    renderTasks();
+    renderDashboardTasks();
+    inputEl.value = '';
+    inputEl.focus();
+    vToast('追加しました');
+  }
+  ['db-quick-btn','t-quick-btn'].forEach(btnId => {
+    const inputId = btnId.replace('-btn', '-input');
+    document.getElementById(btnId).addEventListener('click', () => quickAddTask(document.getElementById(inputId)));
+  });
+  ['db-quick-input','t-quick-input'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); quickAddTask(e.target); } });
   });
 
   // ════════════════════════════════════════════════════════════
