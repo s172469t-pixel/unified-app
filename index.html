@@ -704,6 +704,21 @@
     .v-detail-delete-btn:active { background: #FF3B3010; }
     .v-detail-attach-img { width: 100%; max-width: 320px; border-radius: 10px; margin-bottom: 8px; display: block; cursor: pointer; }
     .v-edit-wrap { padding: 16px; }
+    .v-edit-btn-row {
+      display: flex; gap: 10px; padding: 12px 16px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      background: var(--bg); flex-shrink: 0;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    .v-edit-btn-row button {
+      flex: 1; border: none; border-radius: 12px;
+      padding: 15px; font-size: 16px; font-weight: 600;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .v-edit-btn-cancel { background: #E5E5EA; color: var(--text); }
+    .v-edit-btn-save   { background: var(--accent); color: white; }
+    .v-edit-btn-cancel:active { opacity: 0.75; }
+    .v-edit-btn-save:active   { opacity: 0.85; }
     .v-cat-selects { display: flex; flex-direction: column; gap: 8px; }
     .v-cat-level-wrap { display: flex; align-items: center; gap: 6px; }
     .v-cat-level-label { font-size: 11px; color: var(--sub); flex-shrink: 0; width: 44px; }
@@ -1203,7 +1218,7 @@
       <div class="sub-header">
         <button class="sub-back-btn" id="v-edit-cancel-btn" style="font-size:14px;padding-inline:12px;width:auto">キャンセル</button>
         <span class="sub-header-title" id="v-edit-screen-title">新規追加</span>
-        <button class="sub-back-btn" id="v-edit-save-btn" style="font-size:14px;padding-inline:12px;width:auto;color:var(--accent);font-weight:600">保存</button>
+        <div style="width:44px"></div>
       </div>
       <div class="sub-body">
         <div class="v-edit-wrap">
@@ -1267,6 +1282,10 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="v-edit-btn-row">
+        <button class="v-edit-btn-cancel" id="v-edit-cancel-bottom-btn">キャンセル</button>
+        <button class="v-edit-btn-save"   id="v-edit-save-bottom-btn">保存</button>
       </div>
     </div>
 
@@ -3047,8 +3066,9 @@
     }
   });
 
-  document.getElementById('v-edit-save-btn').addEventListener('click', vSaveEdit);
+  document.getElementById('v-edit-save-bottom-btn').addEventListener('click', vSaveEdit);
   document.getElementById('v-edit-cancel-btn').addEventListener('click', vNavigateBack);
+  document.getElementById('v-edit-cancel-bottom-btn').addEventListener('click', vNavigateBack);
 
   function vSaveEdit() {
     const name = document.getElementById('v-edit-name').value.trim();
