@@ -262,54 +262,84 @@
       display: flex; align-items: center; padding-inline: 16px; z-index: 100;
     }
     .db-app-title { font-size: 17px; font-weight: 700; color: var(--text); }
-    #db-header {
-      padding-top: calc(var(--header-h) + var(--safe-top) + 20px);
-      padding-inline: 20px; padding-bottom: 4px;
-    }
-    #db-date { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.1; }
-    #db-weekday { font-size: 15px; color: var(--sub); margin-top: 4px; font-weight: 500; }
-    .quick-input-wrap {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 16px 10px;
-    }
+    /* Shared quick input (tasks screen) */
+    .quick-input-wrap { display: flex; align-items: center; gap: 8px; padding: 8px 16px 10px; }
     .quick-input {
       flex: 1; height: 38px; border: 1.5px solid rgba(0,0,0,0.12);
       border-radius: 10px; padding: 0 12px; font-size: 14px;
-      background: var(--card); color: var(--text); outline: none;
-      -webkit-appearance: none;
+      background: var(--card); color: var(--text); outline: none; -webkit-appearance: none;
     }
     .quick-input:focus { border-color: var(--accent); }
     .quick-input-btn {
-      flex-shrink: 0; width: 38px; height: 38px;
-      background: var(--accent); color: white; border: none;
-      border-radius: 10px; font-size: 22px; font-weight: 400; line-height: 1;
+      flex-shrink: 0; width: 38px; height: 38px; background: var(--accent); color: white;
+      border: none; border-radius: 10px; font-size: 22px; font-weight: 400; line-height: 1;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
       display: flex; align-items: center; justify-content: center;
     }
     .quick-input-btn:active { opacity: 0.82; }
-    #db-body {
-      padding-inline: 16px;
-      padding-bottom: calc(80px + var(--safe-bottom));
-      padding-top: 20px;
+    /* Dashboard grid */
+    #db-grid {
+      padding-top: calc(var(--header-h) + var(--safe-top));
+      height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
     }
-    .db-section { margin-bottom: 24px; }
-    .db-section-label {
-      font-size: 13px; font-weight: 600; color: var(--sub);
-      letter-spacing: 0.3px; margin-bottom: 8px; padding-left: 2px;
+    #db-top { flex: 1; display: flex; border-bottom: 1px solid var(--divider); min-height: 0; }
+    #db-schedule-area {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+      border-right: 1px solid var(--divider); overflow: hidden; position: relative;
     }
-    .db-card {
-      background: var(--card); border-radius: 12px; padding: 13px 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 8px;
+    #db-schedule-svg { max-width: 192px; max-height: 192px; width: 100%; height: 100%; }
+    #db-assistant-area {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    #db-assistant-inner {
+      position: absolute; inset: 8px; border: 1px solid var(--divider);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    }
+    #db-assistant-label { font-size: 14px; color: rgba(142,142,147,0.45); font-weight: 500; letter-spacing: 2px; }
+    #db-bottom { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    #db-tasks-area {
+      flex: 2; overflow-y: auto; padding: 7px 14px 5px;
+      border-bottom: 1px solid var(--divider); -webkit-overflow-scrolling: touch; min-height: 0;
+    }
+    #db-reviews-area {
+      flex: 1; overflow-y: auto; padding: 7px 14px 5px;
+      -webkit-overflow-scrolling: touch; min-height: 0;
+      padding-bottom: calc(7px + var(--safe-bottom));
+    }
+    .db-area-label {
+      font-size: 10px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .db-task-row {
+      display: flex; align-items: center; gap: 6px; padding: 5px 0;
+      border-bottom: 1px solid var(--divider);
       cursor: pointer; -webkit-tap-highlight-color: transparent;
-      transition: transform 0.1s, box-shadow 0.1s;
     }
-    .db-card:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    .db-card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .db-card-title { font-size: 15px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .db-card-sub { font-size: 12px; color: var(--sub); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
-    .db-card-stars { display: flex; gap: 1px; flex-shrink: 0; }
-    .db-card-star { font-size: 13px; color: var(--grip); }
-    .db-card-star.on { color: var(--orange); }
+    .db-task-row:last-child { border-bottom: none; }
+    .db-task-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .db-task-dot.asap  { background: var(--danger); }
+    .db-task-dot.today { background: var(--orange); }
+    .db-task-dot.week  { background: var(--accent); }
+    .db-task-name {
+      flex: 1; font-size: 13px; font-weight: 500;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .db-task-deadline { font-size: 11px; color: var(--sub); flex-shrink: 0; }
+    .db-review-row {
+      display: flex; align-items: center; gap: 6px; padding: 5px 0;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .db-review-name {
+      flex: 1; font-size: 13px; font-weight: 500;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .db-review-cat {
+      font-size: 11px; color: var(--sub); flex-shrink: 0;
+      max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .db-empty-small { font-size: 12px; color: var(--sub); padding: 6px 0; text-align: center; }
     .db-empty {
       text-align: center; padding: 20px 16px; color: var(--sub);
       font-size: 14px; background: var(--card); border-radius: 12px;
@@ -907,6 +937,170 @@
     .v-confirm-btn + .v-confirm-btn { border-left: 1px solid var(--divider); }
     .v-confirm-cancel { color: var(--sub); }
     .v-confirm-ok { color: var(--danger); font-weight: 600; }
+
+    /* ═══════════════════════════
+       SCHEDULE SETUP SCREEN
+    ═══════════════════════════ */
+    #schedule-setup-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 250; display: flex; flex-direction: column; padding-top: var(--safe-top);
+      transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    #schedule-setup-overlay.open { transform: translateY(0); }
+    #schedule-setup-header {
+      height: var(--header-h); display: flex; align-items: center;
+      justify-content: space-between; padding-inline: 16px;
+      background: var(--header-bg); backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--divider); flex-shrink: 0;
+    }
+    #schedule-setup-title { font-size: 17px; font-weight: 600; }
+    #schedule-setup-close {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--toggle-track); border: none; cursor: pointer;
+      font-size: 16px; color: var(--sub);
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #schedule-setup-body {
+      flex: 1; overflow-y: auto; padding: 20px 16px;
+      padding-bottom: calc(20px + var(--safe-bottom)); -webkit-overflow-scrolling: touch;
+    }
+    .sched-section { margin-bottom: 20px; }
+    .sched-section-title {
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-left: 2px;
+    }
+    .sched-preset-btns { display: flex; gap: 8px; }
+    .sched-preset-btn {
+      flex: 1; padding: 14px 8px; border: 2px solid var(--divider); border-radius: 12px;
+      background: var(--card); font-size: 15px; font-weight: 600; font-family: inherit;
+      color: var(--text); cursor: pointer; text-align: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .sched-preset-btn.selected { border-color: var(--accent); background: var(--accent-tint); color: var(--accent); }
+    .sched-event-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .sched-event-card { background: var(--card); border-radius: 12px; padding: 12px 14px; }
+    .sched-event-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+    .sched-event-row:last-child { margin-bottom: 0; }
+    .sched-event-name {
+      flex: 1; height: 36px; padding: 0 10px; border: 1.5px solid var(--divider);
+      border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text);
+      font-family: inherit; outline: none; -webkit-appearance: none;
+      user-select: text; -webkit-user-select: text;
+    }
+    .sched-event-name:focus { border-color: var(--accent); }
+    .sched-time-input {
+      width: 82px; height: 36px; padding: 0 6px; border: 1.5px solid var(--divider);
+      border-radius: 8px; font-size: 13px; background: var(--bg); color: var(--text);
+      font-family: inherit; outline: none; -webkit-appearance: none;
+      user-select: text; -webkit-user-select: text;
+    }
+    .sched-time-input:focus { border-color: var(--accent); }
+    .sched-type-toggle {
+      display: flex; border-radius: 8px; overflow: hidden;
+      border: 1.5px solid var(--divider); flex-shrink: 0;
+    }
+    .sched-type-btn {
+      padding: 6px 8px; border: none; font-size: 11px; font-weight: 600;
+      font-family: inherit; cursor: pointer; background: var(--bg); color: var(--sub);
+      -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+    }
+    .sched-type-btn.active-yotei { background: #FF9500; color: white; }
+    .sched-type-btn.active-gensha { background: #FF3B30; color: white; }
+    .sched-event-del {
+      width: 28px; height: 28px; border-radius: 50%; background: none;
+      border: 1.5px solid var(--divider); color: var(--sub); font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    .sched-event-del:active { border-color: var(--danger); color: var(--danger); }
+    .sched-note-input {
+      width: 100%; height: 32px; padding: 0 10px; border: 1.5px solid var(--divider);
+      border-radius: 8px; font-size: 13px; background: var(--bg); color: var(--text);
+      font-family: inherit; outline: none; -webkit-appearance: none;
+      user-select: text; -webkit-user-select: text;
+    }
+    .sched-note-input:focus { border-color: var(--accent); }
+    .sched-notify-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px; color: var(--sub);
+    }
+    .sched-add-btn {
+      width: 100%; padding: 12px; border: 1.5px dashed var(--accent); border-radius: 12px;
+      background: none; font-size: 14px; font-weight: 600; color: var(--accent);
+      font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .sched-add-btn:active { background: var(--accent-tint); }
+    .sched-add-btn:disabled { opacity: 0.4; cursor: default; }
+    #sched-preview-wrap {
+      background: var(--card); border-radius: 14px; padding: 16px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    #sched-preview-svg { width: 200px; height: 200px; }
+    .sched-btn-row { display: flex; gap: 10px; }
+    .sched-btn {
+      flex: 1; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: none; -webkit-tap-highlight-color: transparent;
+    }
+    .sched-btn:active { opacity: 0.85; }
+    .sched-btn-confirm { background: var(--accent); color: white; }
+    .sched-btn-ok { background: var(--green); color: white; }
+    .sched-btn-back { background: var(--toggle-track); color: var(--text); }
+    /* ═══════════════════════════
+       PRESET MANAGEMENT
+    ═══════════════════════════ */
+    .preset-tabs { display: flex; gap: 0; margin-bottom: 14px; border-radius: 10px; overflow: hidden; background: var(--bg); padding: 2px; }
+    .preset-tab {
+      flex: 1; padding: 8px 6px; border: none; font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; background: none; color: var(--sub);
+      border-radius: 8px; -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+    }
+    .preset-tab.active { background: var(--card); color: var(--accent); }
+    .preset-event-row {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--card); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+    }
+    .preset-event-name { flex: 1; font-size: 13px; font-weight: 500; }
+    .preset-event-time { font-size: 11px; color: var(--sub); flex-shrink: 0; }
+    .preset-event-type-badge {
+      font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 8px; flex-shrink: 0;
+    }
+    .preset-event-type-badge.yotei { background: #FF950020; color: #FF9500; }
+    .preset-event-type-badge.gensha { background: #FF3B3020; color: #FF3B30; }
+    .preset-event-del-btn {
+      background: none; border: none; color: var(--sub); font-size: 18px;
+      cursor: pointer; padding: 2px 4px; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    .preset-event-del-btn:active { color: var(--danger); }
+    .preset-times-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+    }
+    .preset-time-card {
+      background: var(--card); border-radius: 10px; padding: 10px 12px;
+    }
+    .preset-time-label { font-size: 11px; color: var(--sub); font-weight: 600; margin-bottom: 6px; }
+    .preset-time-inputs { display: flex; align-items: center; gap: 4px; }
+    .preset-time-input {
+      width: 60px; height: 30px; padding: 0 6px; border: 1.5px solid var(--divider);
+      border-radius: 7px; font-size: 12px; background: var(--bg); color: var(--text);
+      font-family: inherit; outline: none; -webkit-appearance: none;
+      user-select: text; -webkit-user-select: text;
+    }
+    .preset-time-input:focus { border-color: var(--accent); }
+    .preset-time-sep { font-size: 11px; color: var(--sub); }
+    .preset-add-event-btn {
+      width: 100%; padding: 10px; border: 1.5px dashed var(--accent); border-radius: 10px;
+      background: none; font-size: 13px; font-weight: 600; color: var(--accent);
+      font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; margin-top: 2px;
+    }
+    .preset-add-event-btn:active { background: var(--accent-tint); }
+    .preset-add-form {
+      background: var(--card); border-radius: 12px; padding: 14px; margin-top: 10px;
+    }
+    .preset-add-form-row { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+    .preset-add-form-row:last-child { margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -945,22 +1139,69 @@
     <div id="db-app-header">
       <span class="db-app-title">StudyAssist</span>
     </div>
-    <div id="db-header">
-      <div id="db-date">読み込み中...</div>
-      <div id="db-weekday"></div>
-    </div>
-    <div class="quick-input-wrap">
-      <input class="quick-input" id="db-quick-input" type="text" placeholder="タスクをすぐ追加..." autocomplete="off">
-      <button class="quick-input-btn" id="db-quick-btn" aria-label="追加">＋</button>
-    </div>
-    <div id="db-body">
-      <div class="db-section">
-        <div class="db-section-label">📋 今日のタスク</div>
-        <div id="db-tasks"><div class="db-empty">読み込み中...</div></div>
+    <div id="db-grid">
+      <!-- Top 50%: schedule graph (left) + assistant (right) -->
+      <div id="db-top">
+        <div id="db-schedule-area" role="button" aria-label="スケジュール設定">
+          <svg id="db-schedule-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"></svg>
+        </div>
+        <div id="db-assistant-area">
+          <div id="db-assistant-inner">
+            <span id="db-assistant-label">Assistant</span>
+          </div>
+        </div>
       </div>
-      <div class="db-section">
-        <div class="db-section-label">📖 本日の復習項目</div>
-        <div id="db-reviews"><div class="db-empty">読み込み中...</div></div>
+      <!-- Bottom 50%: tasks (upper 2/3) + review (lower 1/3) -->
+      <div id="db-bottom">
+        <div id="db-tasks-area">
+          <div class="db-area-label">📋 優先タスク</div>
+          <div id="db-tasks"></div>
+        </div>
+        <div id="db-reviews-area">
+          <div class="db-area-label">📖 本日の復習</div>
+          <div id="db-reviews"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCHEDULE SETUP SCREEN (z-index 250)
+  ══════════════════════════════════════ -->
+  <div id="schedule-setup-overlay">
+    <div id="schedule-setup-header">
+      <div id="schedule-setup-title">今日のご予定は？</div>
+      <button id="schedule-setup-close">✕</button>
+    </div>
+    <div id="schedule-setup-body">
+      <!-- Step 1: Preset selection -->
+      <div class="sched-section" id="sched-step1">
+        <div class="sched-section-title">プリセット</div>
+        <div class="sched-preset-btns">
+          <button class="sched-preset-btn" data-preset="休日">休日</button>
+          <button class="sched-preset-btn" data-preset="大学">大学</button>
+          <button class="sched-preset-btn" data-preset="仕事">仕事</button>
+        </div>
+      </div>
+      <!-- Step 2: Additional events -->
+      <div class="sched-section" id="sched-step2" style="display:none">
+        <div class="sched-section-title">追加イベント</div>
+        <div class="sched-event-list" id="sched-event-list"></div>
+        <button class="sched-add-btn" id="sched-add-event-btn">＋ イベントを追加</button>
+      </div>
+      <!-- Confirm button (step 2) -->
+      <div id="sched-confirm-wrap" style="display:none;margin-bottom:16px">
+        <button class="sched-btn sched-btn-confirm" id="sched-btn-confirm" style="width:100%">確認する</button>
+      </div>
+      <!-- Step 3: Preview -->
+      <div id="sched-step3" style="display:none">
+        <div id="sched-preview-wrap">
+          <svg id="sched-preview-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"></svg>
+        </div>
+        <div class="sched-btn-row">
+          <button class="sched-btn sched-btn-back" id="sched-btn-modify">修正する</button>
+          <button class="sched-btn sched-btn-ok" id="sched-btn-ok">OK・確定する</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1135,6 +1376,19 @@
             <div id="t-setting-perm-row" class="settings-row settings-subrow" style="display:none">
               <button id="t-setting-request-perm" class="perm-btn">バックグラウンド通知を許可する</button>
               <div id="t-setting-perm-status"></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">スケジュールプリセット</div>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div class="preset-tabs" id="preset-tab-group">
+                <button class="preset-tab active" data-preset="休日">休日</button>
+                <button class="preset-tab" data-preset="大学">大学</button>
+                <button class="preset-tab" data-preset="仕事">仕事</button>
+              </div>
+              <div id="preset-editor-body"></div>
             </div>
           </div>
         </div>
@@ -2142,7 +2396,7 @@
   });
 
   // ════════════════════════════════════════════════════════════
-  // QUICK TASK INPUT
+  // QUICK TASK INPUT (tasks screen only)
   // ════════════════════════════════════════════════════════════
   function quickAddTask(inputEl) {
     const title = inputEl.value.trim();
@@ -2154,13 +2408,332 @@
     inputEl.focus();
     vToast('追加しました');
   }
-  ['db-quick-btn','t-quick-btn'].forEach(btnId => {
-    const inputId = btnId.replace('-btn', '-input');
-    document.getElementById(btnId).addEventListener('click', () => quickAddTask(document.getElementById(inputId)));
+  document.getElementById('t-quick-btn').addEventListener('click', () => quickAddTask(document.getElementById('t-quick-input')));
+  document.getElementById('t-quick-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); quickAddTask(e.target); } });
+
+  // ════════════════════════════════════════════════════════════
+  // SCHEDULE SETUP SCREEN
+  // ════════════════════════════════════════════════════════════
+  let schedSelectedPreset = null;
+  let schedEvents = [];
+
+  const schedOverlay = document.getElementById('schedule-setup-overlay');
+
+  function openScheduleSetup() {
+    schedSelectedPreset = null;
+    schedEvents = [];
+    // Reset UI
+    document.querySelectorAll('.sched-preset-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('sched-step2').style.display = 'none';
+    document.getElementById('sched-confirm-wrap').style.display = 'none';
+    document.getElementById('sched-step3').style.display = 'none';
+    document.getElementById('sched-event-list').innerHTML = '';
+    // Pre-select if today already configured
+    const existing = schedGetToday();
+    if (existing && existing.preset) {
+      const btn = document.querySelector(`.sched-preset-btn[data-preset="${existing.preset}"]`);
+      if (btn) { btn.classList.add('selected'); schedSelectedPreset = existing.preset; }
+      schedEvents = (existing.events || []).map(e => ({ ...e }));
+      schedShowStep2();
+    }
+    schedOverlay.classList.add('open');
+  }
+
+  function closeScheduleSetup() { schedOverlay.classList.remove('open'); }
+
+  function schedShowStep2() {
+    document.getElementById('sched-step2').style.display = '';
+    document.getElementById('sched-confirm-wrap').style.display = '';
+    schedRenderEventList();
+    schedUpdateAddBtn();
+  }
+
+  document.getElementById('schedule-setup-close').addEventListener('click', closeScheduleSetup);
+  document.getElementById('db-schedule-area').addEventListener('click', openScheduleSetup);
+
+  document.querySelectorAll('.sched-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sched-preset-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      schedSelectedPreset = btn.dataset.preset;
+      // Load preset events as base
+      const presets = schedGetPresets();
+      const preset = presets[schedSelectedPreset] || {};
+      // Keep any user-added events, or reset if switching preset
+      if (schedEvents.length === 0) {
+        schedEvents = (preset.events || []).map(e => ({ ...e }));
+      }
+      schedShowStep2();
+    });
   });
-  ['db-quick-input','t-quick-input'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); quickAddTask(e.target); } });
+
+  function schedRenderEventList() {
+    const list = document.getElementById('sched-event-list');
+    list.innerHTML = '';
+    schedEvents.forEach((ev, idx) => {
+      const card = document.createElement('div'); card.className = 'sched-event-card';
+      const nameRow = document.createElement('div'); nameRow.className = 'sched-event-row';
+      const nameInput = document.createElement('input');
+      nameInput.className = 'sched-event-name'; nameInput.type = 'text';
+      nameInput.placeholder = 'イベント名'; nameInput.value = ev.name || '';
+      nameInput.addEventListener('input', () => { schedEvents[idx].name = nameInput.value; });
+      const delBtn = document.createElement('button'); delBtn.className = 'sched-event-del'; delBtn.textContent = '×';
+      delBtn.addEventListener('click', () => { schedEvents.splice(idx, 1); schedRenderEventList(); schedUpdateAddBtn(); });
+      nameRow.appendChild(nameInput); nameRow.appendChild(delBtn);
+
+      const timeRow = document.createElement('div'); timeRow.className = 'sched-event-row';
+      const startInput = document.createElement('input');
+      startInput.className = 'sched-time-input'; startInput.type = 'time'; startInput.value = ev.start || '';
+      startInput.addEventListener('change', () => { schedEvents[idx].start = startInput.value; });
+      const sep = document.createElement('span'); sep.textContent = '〜'; sep.style.cssText = 'font-size:13px;color:var(--sub);flex-shrink:0';
+      const endInput = document.createElement('input');
+      endInput.className = 'sched-time-input'; endInput.type = 'time'; endInput.value = ev.end || '';
+      endInput.addEventListener('change', () => { schedEvents[idx].end = endInput.value; });
+
+      const typeToggle = document.createElement('div'); typeToggle.className = 'sched-type-toggle';
+      const btnY = document.createElement('button'); btnY.className = 'sched-type-btn' + (ev.type !== '厳守' ? ' active-yotei' : ''); btnY.textContent = '予定';
+      const btnG = document.createElement('button'); btnG.className = 'sched-type-btn' + (ev.type === '厳守' ? ' active-gensha' : ''); btnG.textContent = '厳守';
+      btnY.addEventListener('click', () => { schedEvents[idx].type = '予定'; btnY.className = 'sched-type-btn active-yotei'; btnG.className = 'sched-type-btn'; });
+      btnG.addEventListener('click', () => { schedEvents[idx].type = '厳守'; btnG.className = 'sched-type-btn active-gensha'; btnY.className = 'sched-type-btn'; });
+      typeToggle.appendChild(btnY); typeToggle.appendChild(btnG);
+      timeRow.appendChild(startInput); timeRow.appendChild(sep); timeRow.appendChild(endInput); timeRow.appendChild(typeToggle);
+
+      const noteRow = document.createElement('div'); noteRow.className = 'sched-event-row';
+      const noteInput = document.createElement('input');
+      noteInput.className = 'sched-note-input'; noteInput.type = 'text';
+      noteInput.placeholder = '備考（任意）'; noteInput.value = ev.note || '';
+      noteInput.addEventListener('input', () => { schedEvents[idx].note = noteInput.value; });
+
+      const notifyRow = document.createElement('div'); notifyRow.className = 'sched-event-row sched-notify-row';
+      notifyRow.innerHTML = '<span>通知</span>';
+      const notifyLabel = document.createElement('label'); notifyLabel.className = 'toggle' ; notifyLabel.style.transform = 'scale(0.8)';
+      const notifyCheck = document.createElement('input'); notifyCheck.type = 'checkbox'; notifyCheck.checked = !!ev.notify;
+      notifyCheck.addEventListener('change', () => { schedEvents[idx].notify = notifyCheck.checked; });
+      const notifyTrack = document.createElement('div'); notifyTrack.className = 'toggle-track';
+      const notifyThumb = document.createElement('div'); notifyThumb.className = 'toggle-thumb';
+      notifyLabel.appendChild(notifyCheck); notifyLabel.appendChild(notifyTrack); notifyLabel.appendChild(notifyThumb);
+      notifyRow.appendChild(notifyLabel);
+
+      card.appendChild(nameRow); card.appendChild(timeRow); noteRow.appendChild(noteInput); card.appendChild(noteRow); card.appendChild(notifyRow);
+      list.appendChild(card);
+    });
+  }
+
+  function schedUpdateAddBtn() {
+    const btn = document.getElementById('sched-add-event-btn');
+    btn.disabled = schedEvents.length >= 4;
+  }
+
+  document.getElementById('sched-add-event-btn').addEventListener('click', () => {
+    if (schedEvents.length >= 4) return;
+    schedEvents.push({ name: '', start: '', end: '', type: '予定', note: '', notify: false });
+    schedRenderEventList();
+    schedUpdateAddBtn();
   });
+
+  document.getElementById('sched-btn-confirm').addEventListener('click', () => {
+    if (!schedSelectedPreset) { vToast('プリセットを選んでください'); return; }
+    const presets = schedGetPresets();
+    const preset = presets[schedSelectedPreset] || {};
+    const schedData = { times: preset.times || SCHEDULE_DEFAULT_TIMES, events: schedEvents };
+    drawScheduleGraph(document.getElementById('sched-preview-svg'), schedData, new Date());
+    document.getElementById('sched-step1').style.display = 'none';
+    document.getElementById('sched-step2').style.display = 'none';
+    document.getElementById('sched-confirm-wrap').style.display = 'none';
+    document.getElementById('sched-step3').style.display = '';
+  });
+
+  document.getElementById('sched-btn-modify').addEventListener('click', () => {
+    document.getElementById('sched-step1').style.display = '';
+    document.getElementById('sched-step2').style.display = '';
+    document.getElementById('sched-confirm-wrap').style.display = '';
+    document.getElementById('sched-step3').style.display = 'none';
+  });
+
+  document.getElementById('sched-btn-ok').addEventListener('click', () => {
+    schedSaveToday({ preset: schedSelectedPreset, events: schedEvents, configured: true });
+    closeScheduleSetup();
+    renderDashboard();
+    vToast('スケジュールを保存しました');
+  });
+
+  // Morning auto-trigger: first open after 4:00 if not yet configured today
+  function schedCheckMorningTrigger() {
+    const now = new Date();
+    if (now.getHours() < 4) return;
+    const existing = schedGetToday();
+    if (!existing || !existing.configured) {
+      setTimeout(openScheduleSetup, 800);
+    }
+  }
+
+  // 1-minute interval to update current time line on dashboard graph
+  let dbGraphTimer = null;
+  function startDbGraphTimer() {
+    if (dbGraphTimer) clearInterval(dbGraphTimer);
+    dbGraphTimer = setInterval(() => {
+      if (currentScreen === 'dashboard') renderDashboardScheduleGraph();
+    }, 60000);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // PRESET MANAGEMENT
+  // ════════════════════════════════════════════════════════════
+  let presetActiveTab = '休日';
+
+  function presetRenderEditor() {
+    const body = document.getElementById('preset-editor-body');
+    if (!body) return;
+    const presets = schedGetPresets();
+    const p = presets[presetActiveTab] || { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) };
+    const times = p.times || SCHEDULE_DEFAULT_TIMES;
+
+    let html = '<div class="preset-times-grid">';
+    [['morning','朝'], ['noon','昼'], ['evening','夜'], ['sleep','就寝']].forEach(([key, label]) => {
+      const t = times[key] || { start: '', end: '' };
+      html += `<div class="preset-time-card">
+        <div class="preset-time-label">${label}</div>
+        <div class="preset-time-inputs">
+          <input class="preset-time-input" data-preset-key="${key}" data-field="start" type="time" value="${t.start||''}">
+          <span class="preset-time-sep">〜</span>
+          <input class="preset-time-input" data-preset-key="${key}" data-field="end" type="time" value="${t.end||''}">
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+
+    // Time inputs
+    body.querySelectorAll('.preset-time-input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const ps = schedGetPresets();
+        if (!ps[presetActiveTab]) ps[presetActiveTab] = { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) };
+        if (!ps[presetActiveTab].times) ps[presetActiveTab].times = JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES));
+        const key = inp.dataset.presetKey, field = inp.dataset.field;
+        if (!ps[presetActiveTab].times[key]) ps[presetActiveTab].times[key] = {};
+        ps[presetActiveTab].times[key][field] = inp.value;
+        schedSavePresets(ps);
+      });
+    });
+
+    // Events list
+    const evWrap = document.createElement('div');
+    (p.events || []).forEach((ev, idx) => {
+      const row = document.createElement('div'); row.className = 'preset-event-row';
+      const typeCls = ev.type === '厳守' ? 'gensha' : 'yotei';
+      const typeLabel = ev.type === '厳守' ? '厳守' : '予定';
+      row.innerHTML = `
+        <div class="preset-event-name">${esc(ev.name||'')}</div>
+        <div class="preset-event-time">${esc(ev.start||'')}〜${esc(ev.end||'')}</div>
+        <div class="preset-event-type-badge ${typeCls}">${typeLabel}</div>
+        <button class="preset-event-del-btn" data-idx="${idx}">×</button>`;
+      evWrap.appendChild(row);
+    });
+    evWrap.querySelectorAll('.preset-event-del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ps = schedGetPresets();
+        if (ps[presetActiveTab] && ps[presetActiveTab].events) {
+          ps[presetActiveTab].events.splice(parseInt(btn.dataset.idx), 1);
+          schedSavePresets(ps); presetRenderEditor();
+        }
+      });
+    });
+    body.appendChild(evWrap);
+
+    // Add event form
+    const addBtn = document.createElement('button'); addBtn.className = 'preset-add-event-btn'; addBtn.textContent = '＋ 固定イベントを追加';
+    const addForm = document.createElement('div'); addForm.className = 'preset-add-form'; addForm.style.display = 'none';
+    addForm.innerHTML = `
+      <div class="preset-add-form-row">
+        <input class="sched-event-name" id="pef-name" type="text" placeholder="イベント名" style="flex:1">
+      </div>
+      <div class="preset-add-form-row">
+        <input class="sched-time-input" id="pef-start" type="time">
+        <span style="font-size:13px;color:var(--sub)">〜</span>
+        <input class="sched-time-input" id="pef-end" type="time">
+        <div class="sched-type-toggle">
+          <button class="sched-type-btn active-yotei" id="pef-type-y">予定</button>
+          <button class="sched-type-btn" id="pef-type-g">厳守</button>
+        </div>
+      </div>
+      <div class="preset-add-form-row">
+        <button class="sched-btn sched-btn-back" id="pef-cancel" style="flex:1;padding:10px">キャンセル</button>
+        <button class="sched-btn sched-btn-confirm" id="pef-save" style="flex:1;padding:10px">追加</button>
+      </div>`;
+    addBtn.addEventListener('click', () => { addForm.style.display = addForm.style.display === 'none' ? '' : 'none'; });
+    body.appendChild(addBtn); body.appendChild(addForm);
+
+    let pefType = '予定';
+    addForm.querySelector('#pef-type-y').addEventListener('click', () => {
+      pefType = '予定';
+      addForm.querySelector('#pef-type-y').className = 'sched-type-btn active-yotei';
+      addForm.querySelector('#pef-type-g').className = 'sched-type-btn';
+    });
+    addForm.querySelector('#pef-type-g').addEventListener('click', () => {
+      pefType = '厳守';
+      addForm.querySelector('#pef-type-g').className = 'sched-type-btn active-gensha';
+      addForm.querySelector('#pef-type-y').className = 'sched-type-btn';
+    });
+    addForm.querySelector('#pef-cancel').addEventListener('click', () => { addForm.style.display = 'none'; });
+    addForm.querySelector('#pef-save').addEventListener('click', () => {
+      const name = addForm.querySelector('#pef-name').value.trim();
+      const start = addForm.querySelector('#pef-start').value;
+      const end   = addForm.querySelector('#pef-end').value;
+      if (!name) { vToast('イベント名を入力してください'); return; }
+      const ps = schedGetPresets();
+      if (!ps[presetActiveTab]) ps[presetActiveTab] = { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) };
+      if (!ps[presetActiveTab].events) ps[presetActiveTab].events = [];
+      ps[presetActiveTab].events.push({ name, start, end, type: pefType });
+      schedSavePresets(ps); presetRenderEditor();
+    });
+  }
+
+  document.getElementById('preset-tab-group').addEventListener('click', e => {
+    const tab = e.target.closest('.preset-tab'); if (!tab) return;
+    presetActiveTab = tab.dataset.preset;
+    document.querySelectorAll('.preset-tab').forEach(t => t.classList.toggle('active', t === tab));
+    presetRenderEditor();
+  });
+
+  // Render preset editor when settings screen opens
+  document.getElementById('t-menu-settings').addEventListener('click', () => {
+    setTimeout(presetRenderEditor, 50);
+  }, true);
+
+  // ════════════════════════════════════════════════════════════
+  // SCHEDULE GOOGLE DRIVE SYNC (SchedSync)
+  // ════════════════════════════════════════════════════════════
+  const SchedSync = (() => {
+    let pendingUpload = false;
+    async function scheduleSyncToCloud() {
+      if (!getDriveEnabled()) return;
+      pendingUpload = true;
+      if (!TaskSync.isAuthed()) return;
+      if (!navigator.onLine) return;
+      try {
+        const data = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || 'null');
+        if (!data) return;
+        const token = await (TaskSync._getToken ? TaskSync._getToken() : null);
+        if (!token) return;
+        const q = encodeURIComponent(`name='${SCHEDULE_GDRIVE_FILE}' and trashed=false`);
+        const sr = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&spaces=drive`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!sr.ok) return;
+        const { files } = await sr.json();
+        const body = JSON.stringify(data, null, 2);
+        if (files && files.length > 0) {
+          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${files[0].id}?uploadType=media`,
+            { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body });
+        } else {
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify({ name: SCHEDULE_GDRIVE_FILE, mimeType: 'application/json' })], { type: 'application/json' }));
+          form.append('media', new Blob([body], { type: 'application/json' }));
+          await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+        }
+        pendingUpload = false;
+      } catch {}
+    }
+    return { scheduleSyncToCloud };
+  })();
 
   // ════════════════════════════════════════════════════════════
   // SHARED DRIVE ENABLED STATE
@@ -2426,56 +2999,236 @@
   }, { passive: true });
 
   // ════════════════════════════════════════════════════════════
-  // DASHBOARD — date + real task data
+  // SCHEDULE — constants & storage
   // ════════════════════════════════════════════════════════════
-  const DB_DAYS = ['日','月','火','水','木','金','土'];
+  const SCHEDULE_KEY         = 'schedule_data';
+  const SCHEDULE_PRESETS_KEY = 'schedule_presets';
+  const SCHEDULE_GDRIVE_FILE = 'schedule_data.json';
 
+  const SCHEDULE_DEFAULT_TIMES = {
+    morning: { start: '07:30', end: '08:30' },
+    noon:    { start: '12:00', end: '13:00' },
+    evening: { start: '18:30', end: '19:30' },
+    sleep:   { start: '23:00', end: '07:00' }
+  };
+
+  function schedGetPresets() {
+    try {
+      const d = JSON.parse(localStorage.getItem(SCHEDULE_PRESETS_KEY) || 'null');
+      if (d) return d;
+    } catch {}
+    return {
+      '休日': { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) },
+      '大学': { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) },
+      '仕事': { events: [], times: JSON.parse(JSON.stringify(SCHEDULE_DEFAULT_TIMES)) }
+    };
+  }
+  function schedSavePresets(p) { localStorage.setItem(SCHEDULE_PRESETS_KEY, JSON.stringify(p)); }
+
+  function schedGetToday() {
+    try {
+      const d = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || 'null');
+      const today = new Date().toISOString().slice(0,10);
+      if (d && d.date === today) return d;
+    } catch {}
+    return null;
+  }
+  function schedSaveToday(data) {
+    data.date = new Date().toISOString().slice(0,10);
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify(data));
+    SchedSync.scheduleSyncToCloud();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // SCHEDULE — graph drawing (shared)
+  // ════════════════════════════════════════════════════════════
+  function drawScheduleGraph(svgEl, scheduleData, currentTime) {
+    const W = 200, H = 200;
+    const cx = W / 2, cy = H / 2;
+    const outerR = 92, innerR = 50;
+    svgEl.innerHTML = '';
+    svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    function timeToHours(t) {
+      if (!t) return 0;
+      const [h, m] = t.split(':').map(Number);
+      return h + m / 60;
+    }
+    function hoursToAngle(h) { return (h / 24) * 2 * Math.PI - Math.PI / 2; }
+
+    function ringArc(startH, endH, oR, iR) {
+      let sH = startH % 24, eH = endH % 24;
+      if (eH <= sH) eH += 24;
+      const sa = hoursToAngle(sH), ea = hoursToAngle(eH);
+      const span = ea - sa;
+      if (span <= 0) return '';
+      const large = span > Math.PI ? 1 : 0;
+      const ox1 = cx + oR * Math.cos(sa), oy1 = cy + oR * Math.sin(sa);
+      const ox2 = cx + oR * Math.cos(ea), oy2 = cy + oR * Math.sin(ea);
+      const ix2 = cx + iR * Math.cos(ea), iy2 = cy + iR * Math.sin(ea);
+      const ix1 = cx + iR * Math.cos(sa), iy1 = cy + iR * Math.sin(sa);
+      return `M${ox1.toFixed(2)},${oy1.toFixed(2)} A${oR},${oR} 0 ${large},1 ${ox2.toFixed(2)},${oy2.toFixed(2)} L${ix2.toFixed(2)},${iy2.toFixed(2)} A${iR},${iR} 0 ${large},0 ${ix1.toFixed(2)},${iy1.toFixed(2)} Z`;
+    }
+
+    function addPath(d, fill, opacity) {
+      if (!d) return;
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', d); p.setAttribute('fill', fill);
+      if (opacity != null) p.setAttribute('opacity', opacity);
+      svgEl.appendChild(p);
+    }
+    function addCircle(x, y, r, fill, opacity) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', x); c.setAttribute('cy', y);
+      c.setAttribute('r', r); c.setAttribute('fill', fill);
+      if (opacity != null) c.setAttribute('opacity', opacity);
+      svgEl.appendChild(c);
+    }
+
+    // Background ring base
+    addCircle(cx, cy, outerR, 'rgba(142,142,147,0.12)');
+
+    // Yin-yang at 18% opacity (inside inner hole area)
+    const yyR = innerR * 0.88;
+    const yyG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    yyG.setAttribute('opacity', '0.18');
+    const yyBase = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    yyBase.setAttribute('cx', cx); yyBase.setAttribute('cy', cy);
+    yyBase.setAttribute('r', yyR); yyBase.setAttribute('fill', 'white');
+    yyG.appendChild(yyBase);
+    const yyDark = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const r2 = yyR / 2;
+    yyDark.setAttribute('d',
+      `M ${cx},${cy - yyR}` +
+      ` A ${yyR},${yyR} 0 0,0 ${cx},${cy + yyR}` +
+      ` A ${r2},${r2} 0 0,1 ${cx},${cy}` +
+      ` A ${r2},${r2} 0 0,0 ${cx},${cy - yyR} Z`);
+    yyDark.setAttribute('fill', 'black');
+    yyG.appendChild(yyDark);
+    const yyWDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    yyWDot.setAttribute('cx', cx); yyWDot.setAttribute('cy', cy - yyR / 2);
+    yyWDot.setAttribute('r', yyR / 6); yyWDot.setAttribute('fill', 'white');
+    yyG.appendChild(yyWDot);
+    const yyBDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    yyBDot.setAttribute('cx', cx); yyBDot.setAttribute('cy', cy + yyR / 2);
+    yyBDot.setAttribute('r', yyR / 6); yyBDot.setAttribute('fill', 'black');
+    yyG.appendChild(yyBDot);
+    svgEl.appendChild(yyG);
+
+    const times = (scheduleData && scheduleData.times) || SCHEDULE_DEFAULT_TIMES;
+    const events = (scheduleData && scheduleData.events) || [];
+
+    // Layer: green base (free time) — full ring
+    addPath(ringArc(0, 24, outerR, innerR), '#34C759');
+
+    // Layer: white (morning / noon / evening) — no labels
+    [times.morning, times.noon, times.evening].forEach(t => {
+      if (t && t.start && t.end)
+        addPath(ringArc(timeToHours(t.start), timeToHours(t.end), outerR, innerR), 'white');
+    });
+
+    // Layer: sleep (navy)
+    if (times.sleep && times.sleep.start && times.sleep.end) {
+      addPath(ringArc(timeToHours(times.sleep.start), timeToHours(times.sleep.end), outerR, innerR), '#1a3461');
+    }
+
+    // Layer: user events (orange / red)
+    events.forEach(ev => {
+      if (!ev.start || !ev.end) return;
+      const color = ev.type === '厳守' ? '#FF3B30' : '#FF9500';
+      addPath(ringArc(timeToHours(ev.start), timeToHours(ev.end), outerR, innerR), color);
+    });
+
+    // Inner hole (use CSS bg color)
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    addCircle(cx, cy, innerR, isDark ? '#1C1C1E' : '#F2F2F7');
+
+    // Sleep start dashed blue line
+    if (times.sleep && times.sleep.start) {
+      const angle = hoursToAngle(timeToHours(times.sleep.start));
+      const x1 = cx + (innerR + 2) * Math.cos(angle), y1 = cy + (innerR + 2) * Math.sin(angle);
+      const x2 = cx + (outerR + 4) * Math.cos(angle), y2 = cy + (outerR + 4) * Math.sin(angle);
+      const sl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      sl.setAttribute('x1', x1.toFixed(2)); sl.setAttribute('y1', y1.toFixed(2));
+      sl.setAttribute('x2', x2.toFixed(2)); sl.setAttribute('y2', y2.toFixed(2));
+      sl.setAttribute('stroke', '#007AFF'); sl.setAttribute('stroke-width', '2');
+      sl.setAttribute('stroke-dasharray', '4,3'); sl.setAttribute('stroke-linecap', 'round');
+      svgEl.appendChild(sl);
+    }
+
+    // Current time red line
+    if (currentTime) {
+      const h = currentTime.getHours() + currentTime.getMinutes() / 60;
+      const angle = hoursToAngle(h);
+      const x1 = cx + innerR * 0.4 * Math.cos(angle), y1 = cy + innerR * 0.4 * Math.sin(angle);
+      const x2 = cx + (outerR + 6) * Math.cos(angle), y2 = cy + (outerR + 6) * Math.sin(angle);
+      const tl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tl.setAttribute('x1', x1.toFixed(2)); tl.setAttribute('y1', y1.toFixed(2));
+      tl.setAttribute('x2', x2.toFixed(2)); tl.setAttribute('y2', y2.toFixed(2));
+      tl.setAttribute('stroke', '#FF3B30'); tl.setAttribute('stroke-width', '2.5');
+      tl.setAttribute('stroke-linecap', 'round');
+      svgEl.appendChild(tl);
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', x2.toFixed(2)); dot.setAttribute('cy', y2.toFixed(2));
+      dot.setAttribute('r', '3.5'); dot.setAttribute('fill', '#FF3B30');
+      svgEl.appendChild(dot);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // DASHBOARD — render
+  // ════════════════════════════════════════════════════════════
   function renderDashboard() {
-    const now = new Date();
-    document.getElementById('db-date').textContent =
-      `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
-    document.getElementById('db-weekday').textContent = `（${DB_DAYS[now.getDay()]}）`;
+    renderDashboardScheduleGraph();
     renderDashboardTasks();
     renderDashboardReviews();
   }
 
+  function renderDashboardScheduleGraph() {
+    const svg = document.getElementById('db-schedule-svg');
+    if (!svg) return;
+    const sched = schedGetToday();
+    let schedData = null;
+    if (sched) {
+      const presets = schedGetPresets();
+      const preset  = presets[sched.preset] || {};
+      schedData = { times: preset.times || SCHEDULE_DEFAULT_TIMES, events: sched.events || [] };
+    }
+    drawScheduleGraph(svg, schedData, new Date());
+  }
+
   function renderDashboardTasks() {
     const el = document.getElementById('db-tasks');
+    if (!el) return;
     const priorities = loadTasks().filter(isPriority);
     el.innerHTML = '';
     if (!priorities.length) {
-      el.innerHTML = '<div class="db-empty">本日の優先タスクはありません ✅</div>'; return;
+      el.innerHTML = '<div class="db-empty-small">優先タスクはありません</div>'; return;
     }
-    priorities.slice(0, 8).forEach(t => {
-      const card = document.createElement('div'); card.className = 'db-card';
-      let badgeCls = 'badge-week', badgeText = '';
-      if (t.deadlineType === 'asap')       { badgeCls = 'badge-asap';  badgeText = 'ASAP'; }
-      else if (t.deadlineType === 'today') { badgeCls = 'badge-today'; badgeText = '今日中'; }
-      else if (t.deadlineType === 'fri')   { badgeCls = 'badge-week';  badgeText = '今週中(金)'; }
-      else if (t.deadlineType === 'sun')   { badgeCls = 'badge-week';  badgeText = '今週中(日)'; }
-      else if (t.deadlineIso)              { badgeCls = 'badge-week';  badgeText = fmtDt(t.deadlineIso); }
-      const badge = badgeText ? `<span class="badge ${badgeCls}">${esc(badgeText)}</span>` : '';
-      const note  = t.note ? `<span style="color:var(--sub)">${esc(t.note.slice(0,30))}${t.note.length>30?'…':''}</span>` : '';
-      card.innerHTML = `
-        <div class="db-card-row">
-          <div class="db-card-title">${esc(t.title)}</div>
-          ${badge}
-        </div>
-        ${note ? `<div class="db-card-sub">${note}</div>` : ''}`;
-      card.addEventListener('click', () => {
+    priorities.slice(0, 3).forEach(t => {
+      const row = document.createElement('div'); row.className = 'db-task-row';
+      let dotCls = 'week';
+      if (t.deadlineType === 'asap') dotCls = 'asap';
+      else if (t.deadlineType === 'today') dotCls = 'today';
+      let deadlineText = '';
+      if (t.deadlineType === 'asap') deadlineText = 'ASAP';
+      else if (t.deadlineType === 'today') deadlineText = '今日中';
+      else if (t.deadlineType === 'fri')   deadlineText = '今週(金)';
+      else if (t.deadlineType === 'sun')   deadlineText = '今週(日)';
+      else if (t.deadlineIso) {
+        const d = new Date(t.deadlineIso);
+        deadlineText = `${d.getMonth()+1}/${d.getDate()}`;
+      }
+      row.innerHTML = `<div class="db-task-dot ${dotCls}"></div><div class="db-task-name">${esc(t.title)}</div><div class="db-task-deadline">${esc(deadlineText)}</div>`;
+      row.addEventListener('click', () => {
         switchScreen('tasks');
         requestAnimationFrame(() => {
           const taskCard = document.querySelector(`.task-card[data-id="${t.id}"]`);
           if (taskCard) { taskCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => tShowPopMenu(t.id, taskCard), 120); }
         });
       });
-      el.appendChild(card);
+      el.appendChild(row);
     });
-    if (priorities.length > 8) {
-      const more = document.createElement('div'); more.className = 'db-empty';
-      more.textContent = `他 ${priorities.length - 8} 件...`;
-      el.appendChild(more);
-    }
   }
 
   function vDbGetTodayReviews() {
@@ -2489,31 +3242,21 @@
 
   function renderDashboardReviews() {
     const el = document.getElementById('db-reviews');
+    if (!el) return;
     const items = vDbGetTodayReviews();
     el.innerHTML = '';
-    if (!items.length) { el.innerHTML = '<div class="db-empty">本日の復習項目はありません ✅</div>'; return; }
-    items.slice(0, 10).forEach(item => {
-      const card = document.createElement('div'); card.className = 'db-card';
-      let starsHtml = '';
-      for (let i = 1; i <= 5; i++) starsHtml += `<span class="db-card-star${i <= item.proficiency ? ' on' : ''}">★</span>`;
-      const crumb = vMakeCrumb(item) || '未分類';
-      const od = vIsOverdue(item.next_review_date);
-      card.innerHTML = `
-        <div class="db-card-row">
-          <div class="db-card-title">${esc(item.name)}</div>
-          <div class="db-card-stars">${starsHtml}</div>
-        </div>
-        <div class="db-card-sub">
-          ${esc(crumb)}
-          ${od ? '<span class="v-overdue-badge">期限超過</span>' : ''}
-        </div>`;
-      card.addEventListener('click', () => { switchScreen('vetlearn'); vOpenDetail(item.id); });
-      el.appendChild(card);
-    });
-    if (items.length > 10) {
-      const more = document.createElement('div'); more.className = 'db-empty';
-      more.textContent = `他 ${items.length - 10} 件...`;
-      el.appendChild(more);
+    if (!items.length) {
+      el.innerHTML = '<div class="db-empty-small">本日の復習項目はありません</div>'; return;
+    }
+    const item = items[0];
+    const row = document.createElement('div'); row.className = 'db-review-row';
+    const crumb = vMakeCrumb(item) || '未分類';
+    row.innerHTML = `<div class="db-review-name">${esc(item.name)}</div><div class="db-review-cat">${esc(crumb)}</div>`;
+    row.addEventListener('click', () => { switchScreen('vetlearn'); vOpenDetail(item.id); });
+    el.appendChild(row);
+    if (items.length > 1) {
+      const more = document.createElement('div'); more.className = 'db-empty-small';
+      more.textContent = `他 ${items.length - 1} 件`; el.appendChild(more);
     }
   }
 
@@ -3828,6 +4571,8 @@
   vRefreshCats();
   renderTasks();
   renderDashboard();
+  startDbGraphTimer();
+  schedCheckMorningTrigger();
   if (tGetSettings().notifyEnabled) tStartNotifTimer();
   if (tGetSettings().driveEnabled && TaskSync.isAuthed() && navigator.onLine) TaskSync.syncFromCloud();
   if (vGetSettings().driveEnabled && VetSync.isAuthed() && navigator.onLine) VetSync.syncFromCloud();
