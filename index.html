@@ -1101,9 +1101,28 @@
     }
     .preset-add-form-row { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
     .preset-add-form-row:last-child { margin-bottom: 0; }
+
+    /* ── Loading screen ── */
+    #loading-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+    #loading-character { margin-bottom: 20px; min-height: 80px; }
+    #loading-text { font-size: 16px; font-weight: 600; color: var(--sub); letter-spacing: 2px; }
   </style>
 </head>
 <body>
+
+  <!-- ══════════════════════════════════════
+       LOADING SCREEN (z-index 9999)
+  ══════════════════════════════════════ -->
+  <div id="loading-screen">
+    <div id="loading-character"><!-- 将来アニメーション用 --></div>
+    <div id="loading-text">Now Loading...</div>
+  </div>
 
   <!-- ══════════════════════════════════════
        NAV BAR
@@ -1791,6 +1810,26 @@
 
   <script>
   'use strict';
+
+  // ════════════════════════════════════════════════════════════
+  // LOADING SCREEN
+  // ════════════════════════════════════════════════════════════
+  let _loadingDone = false;
+  let _loadingTimeout = null;
+
+  function hideLoadingScreen() {
+    if (_loadingDone) return;
+    _loadingDone = true;
+    clearTimeout(_loadingTimeout);
+    const el = document.getElementById('loading-screen');
+    el.classList.add('fade-out');
+    setTimeout(() => { el.style.display = 'none'; }, 500);
+  }
+
+  _loadingTimeout = setTimeout(() => {
+    hideLoadingScreen();
+    setTimeout(() => vToast('ローカルモードで起動しました', 3000), 500);
+  }, 10000);
 
   // ════════════════════════════════════════════════════════════
   // SHARED UTILITY
@@ -4527,6 +4566,7 @@
   // ════════════════════════════════════════════════════════════
   window.onGoogleLibraryLoad = async () => {
     const [taskOk, vetOk] = await Promise.all([TaskSync.onGISLoad(), VetSync.onGISLoad()]);
+    hideLoadingScreen();
     if (!taskOk && !vetOk) showDriveLoginPopup();
   };
   window.addEventListener('online', () => TaskSync.flushPending());
