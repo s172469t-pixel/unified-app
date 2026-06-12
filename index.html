@@ -287,6 +287,7 @@
       flex: 1; display: flex; align-items: center; justify-content: center;
       padding: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent;
       border-right: 1px solid var(--divider); overflow: hidden; position: relative;
+      transition: background 0.5s ease;
     }
     #db-schedule-svg { max-width: 192px; max-height: 192px; width: 100%; height: 100%; }
     #db-assistant-area {
@@ -3214,6 +3215,34 @@
     }
   }
 
+  function getScheduleBgColor(schedData, now) {
+    const nowH = now.getHours() + now.getMinutes() / 60;
+    function toH(t) {
+      if (!t) return null;
+      const [h, m] = t.split(':').map(Number);
+      return h + m / 60;
+    }
+    function inRange(n, s, e) {
+      if (s == null || e == null) return false;
+      return e <= s ? (n >= s || n < e) : (n >= s && n < e);
+    }
+    const times  = (schedData && schedData.times)  || SCHEDULE_DEFAULT_TIMES;
+    const events = (schedData && schedData.events) || [];
+
+    for (const ev of events) {
+      if (!ev.start || !ev.end) continue;
+      if (inRange(nowH, toH(ev.start), toH(ev.end)))
+        return ev.type === '厳守' ? '#7A2E2E' : '#8A4520';
+    }
+    if (times.sleep && times.sleep.start && times.sleep.end &&
+        inRange(nowH, toH(times.sleep.start), toH(times.sleep.end))) return '#0F2342';
+    for (const key of ['morning', 'noon', 'evening']) {
+      const t = times[key];
+      if (t && t.start && t.end && inRange(nowH, toH(t.start), toH(t.end))) return '#9E9E98';
+    }
+    return '#33593F';
+  }
+
   // ════════════════════════════════════════════════════════════
   // DASHBOARD — render
   // ════════════════════════════════════════════════════════════
@@ -3233,7 +3262,10 @@
       const preset  = presets[sched.preset] || {};
       schedData = { times: preset.times || SCHEDULE_DEFAULT_TIMES, events: sched.events || [] };
     }
-    drawScheduleGraph(svg, schedData, new Date());
+    const now = new Date();
+    drawScheduleGraph(svg, schedData, now);
+    const area = document.getElementById('db-schedule-area');
+    if (area) area.style.background = getScheduleBgColor(schedData, now);
   }
 
   function renderDashboardTasks() {
