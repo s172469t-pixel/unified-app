@@ -1191,7 +1191,10 @@
   <div id="schedule-setup-overlay">
     <div id="schedule-setup-header">
       <div id="schedule-setup-title">今日のご予定は？</div>
-      <button id="schedule-setup-close">✕</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button id="schedule-setup-skip" style="background:none;border:none;font-size:14px;color:var(--sub);cursor:pointer;padding:6px 10px;font-family:inherit;-webkit-tap-highlight-color:transparent">スキップ</button>
+        <button id="schedule-setup-close">✕</button>
+      </div>
     </div>
     <div id="schedule-setup-body">
       <!-- Step 1: Preset selection -->
@@ -1830,6 +1833,7 @@
   _loadingTimeout = setTimeout(() => {
     hideLoadingScreen();
     setTimeout(() => vToast('ローカルモードで起動しました', 3000), 500);
+    schedCheckMorningTrigger();
   }, 10000);
 
   // ════════════════════════════════════════════════════════════
@@ -2488,7 +2492,6 @@
     schedUpdateAddBtn();
   }
 
-  document.getElementById('schedule-setup-close').addEventListener('click', closeScheduleSetup);
   document.getElementById('db-schedule-area').addEventListener('click', openScheduleSetup);
 
   document.querySelectorAll('.sched-preset-btn').forEach(btn => {
@@ -2590,17 +2593,32 @@
     document.getElementById('sched-step3').style.display = 'none';
   });
 
-  document.getElementById('sched-btn-ok').addEventListener('click', () => {
+  document.getElementById('sched-btn-ok').addEventListener('click', async () => {
+    const existing = schedGetToday();
+    if (existing && existing.configured) {
+      const ok = await vShowConfirm('スケジュールを上書き', '既存のスケジュールがあります。上書きしますか？', '上書き');
+      if (!ok) return;
+    }
     schedSaveToday({ preset: schedSelectedPreset, events: schedEvents, configured: true });
     closeScheduleSetup();
     renderDashboard();
     vToast('スケジュールを保存しました');
   });
 
-  // Morning auto-trigger: first open after 4:00 if not yet configured today
+  document.getElementById('schedule-setup-close').addEventListener('click', closeScheduleSetup);
+  document.getElementById('schedule-setup-skip').addEventListener('click', () => {
+    localStorage.setItem(SCHED_SKIP_KEY, new Date().toISOString().slice(0, 10));
+    closeScheduleSetup();
+  });
+
+  // Morning auto-trigger: first open after 4:00 if not yet configured/skipped today
+  let _morningTriggerDone = false;
   function schedCheckMorningTrigger() {
+    if (_morningTriggerDone) return;
+    _morningTriggerDone = true;
     const now = new Date();
     if (now.getHours() < 4) return;
+    if (localStorage.getItem(SCHED_SKIP_KEY) === now.toISOString().slice(0, 10)) return;
     const existing = schedGetToday();
     if (!existing || !existing.configured) {
       setTimeout(openScheduleSetup, 800);
@@ -2745,6 +2763,25 @@
   // ════════════════════════════════════════════════════════════
   const SchedSync = (() => {
     let pendingUpload = false;
+
+    async function syncFromCloud() {
+      if (!getDriveEnabled() || !TaskSync.isAuthed() || !navigator.onLine) return null;
+      try {
+        const token = await (TaskSync._getToken ? TaskSync._getToken() : null);
+        if (!token) return null;
+        const q = encodeURIComponent(`name='${SCHEDULE_GDRIVE_FILE}' and trashed=false`);
+        const sr = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&spaces=drive`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!sr.ok) return null;
+        const { files } = await sr.json();
+        if (!files || files.length === 0) return null;
+        const dr = await fetch(`https://www.googleapis.com/drive/v3/files/${files[0].id}?alt=media`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!dr.ok) return null;
+        const data = await dr.json();
+        if (data && data.date) localStorage.setItem(SCHEDULE_KEY, JSON.stringify(data));
+        return data;
+      } catch { return null; }
+    }
+
     async function scheduleSyncToCloud() {
       if (!getDriveEnabled()) return;
       pendingUpload = true;
@@ -2772,7 +2809,7 @@
         pendingUpload = false;
       } catch {}
     }
-    return { scheduleSyncToCloud };
+    return { syncFromCloud, scheduleSyncToCloud };
   })();
 
   // ════════════════════════════════════════════════════════════
@@ -2959,7 +2996,7 @@
 
     function init() { loadStored(); initGIS(); }
 
-    return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud };
+    return { init, signIn, signOut, isAuthed, onGISLoad, scheduleSyncToCloud, syncFromCloud, flushPending: scheduleSyncToCloud, _getToken: getToken };
   })();
 
   // ── Unified Drive toggle / sign-in / sign-out handlers ──────────
@@ -3044,6 +3081,7 @@
   const SCHEDULE_KEY         = 'schedule_data';
   const SCHEDULE_PRESETS_KEY = 'schedule_presets';
   const SCHEDULE_GDRIVE_FILE = 'schedule_data.json';
+  const SCHED_SKIP_KEY       = 'schedule_skip_date';
 
   const SCHEDULE_DEFAULT_TIMES = {
     morning: { start: '07:30', end: '08:30' },
@@ -4589,17 +4627,27 @@
     hideDriveLoginPopup();
     setDriveEnabled(true); tUpdateDriveUI();
     await Promise.all([TaskSync.signIn(), VetSync.signIn()]);
+    await SchedSync.syncFromCloud();
     tUpdateDriveUI();
+    schedCheckMorningTrigger();
   });
-  document.getElementById('dlp-skip-btn').addEventListener('click', () => hideDriveLoginPopup());
+  document.getElementById('dlp-skip-btn').addEventListener('click', () => {
+    hideDriveLoginPopup();
+    schedCheckMorningTrigger();
+  });
 
   // ════════════════════════════════════════════════════════════
   // GIS CALLBACK + ONLINE HANDLER
   // ════════════════════════════════════════════════════════════
   window.onGoogleLibraryLoad = async () => {
     const [taskOk, vetOk] = await Promise.all([TaskSync.onGISLoad(), VetSync.onGISLoad()]);
+    if (taskOk) await SchedSync.syncFromCloud();
     hideLoadingScreen();
-    if (!taskOk && !vetOk) showDriveLoginPopup();
+    if (!taskOk && !vetOk) {
+      showDriveLoginPopup();
+    } else {
+      schedCheckMorningTrigger();
+    }
   };
   window.addEventListener('online', () => TaskSync.flushPending());
   if (navigator.serviceWorker) {
@@ -4644,7 +4692,6 @@
   renderTasks();
   renderDashboard();
   startDbGraphTimer();
-  schedCheckMorningTrigger();
   if (tGetSettings().notifyEnabled) tStartNotifTimer();
   if (tGetSettings().driveEnabled && TaskSync.isAuthed() && navigator.onLine) TaskSync.syncFromCloud();
   if (vGetSettings().driveEnabled && VetSync.isAuthed() && navigator.onLine) VetSync.syncFromCloud();
